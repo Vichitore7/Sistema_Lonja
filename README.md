@@ -306,7 +306,7 @@ index.js       punto de entrada del servidor
 
 El repositorio tiene tres ramas:
 
-- `main`: versión estable. Está protegida: no se puede borrar ni sobrescribir, y los cambios de colaboradores entran por Pull Request.
+- `main`: versión estable. Ambos integrantes pueden subir cambios directamente; está protegida para que no se pueda borrar ni sobrescribir su historial (force push).
 - `Victor` y `Alejandra`: rama de trabajo de cada integrante.
 
 Para trabajar en la rama propia:
@@ -320,7 +320,16 @@ git commit -m "Descripción del cambio"
 git push
 ```
 
-Después, en GitHub, abrir un Pull Request de la rama propia hacia `main`.
+Para pasar los cambios de la rama propia a `main`:
+
+```bash
+git checkout main
+git pull
+git merge Alejandra             # o Victor
+git push
+```
+
+También se puede trabajar directamente en `main` con `git pull` antes de empezar y `git push` al terminar.
 
 ## Licencia
 
