@@ -10,8 +10,9 @@
     "instalar": "node config/instalar.js",
     "datos:prueba": "node config/datosPrueba.js"
   },
-  "author": "Equipo Sistema Lonja (Programación Web 2)",
-  "license": "ISC",
+  "author": "Victor Federico Caldera Arellano y Alejandra (Programación Web 2)",
+  "license": "UNLICENSED",
+  "private": true,
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
     "@fontsource/poppins": "^5.3.0",

@@ -83,3 +83,8 @@ public/        css, js, img, uploads/especies, vendor/bootstrap
 ## Rutas principales
 
 `/login`, `/dashboard`, `/inventario`, `/lotes` (`/nuevo`, `/:id`, `/:id/editar`, `/:id/retirar`), `/tipos`, `/compradores`, `/compras/nueva`, `/compras/historial`, `/compras/:id`, `/reportes`, `/reportes/diario?fecha=`, `/reportes/diario/pdf?fecha=`, `/usuarios`.
+
+## Licencia
+
+© 2026 Victor Federico Caldera Arellano y Alejandra. **Todos los derechos reservados.**
+Este código es visible públicamente solo para consulta; no se permite copiarlo, modificarlo ni reutilizarlo sin autorización por escrito. Ver [LICENSE](LICENSE).
