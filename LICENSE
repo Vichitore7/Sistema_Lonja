@@ -1,25 +1,21 @@
-Copyright (c) 2026 Victor Federico Caldera Arellano y Alejandra.
-Todos los derechos reservados.
+MIT License
 
-Sistema Lonja — Software propietario
+Copyright (c) 2026 Victor Federico Caldera Arellano y Alejandra Naomi Muciño Hernández
 
-Este repositorio es visible públicamente únicamente con fines de consulta y
-evaluación académica. La visibilidad pública NO otorga ninguna licencia de uso.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Queda prohibido, sin autorización previa y por escrito de los titulares:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-  1. Copiar, reproducir o redistribuir total o parcialmente el código fuente,
-     la documentación, los diseños, las vistas o cualquier otro material de
-     este repositorio.
-  2. Modificar, adaptar o crear obras derivadas a partir de este material.
-  3. Utilizar este material, o partes de él, en trabajos escolares, proyectos
-     propios, productos comerciales o servicios de cualquier tipo.
-  4. Presentar este material, total o parcialmente, como trabajo propio.
-
-Las bibliotecas de terceros incluidas como dependencias (por ejemplo, las
-listadas en package.json) se rigen por sus propias licencias.
-
-Este software se proporciona "tal cual", sin garantía de ningún tipo.
-
-Para solicitar permisos, contactar a los titulares a través de GitHub:
-https://github.com/Vichitore7/Sistema_Lonja
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
