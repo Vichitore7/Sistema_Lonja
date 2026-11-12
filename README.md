@@ -61,7 +61,9 @@ Antes de empezar se necesita tener instalado:
 | Node.js | 20 o superior (incluye npm) | Ejecutar el servidor |
 | MariaDB | 10.6 o superior | Base de datos |
 
-### Instalar en Linux (Ubuntu / Debian)
+### Instalar en Linux Mint (también funciona en Ubuntu y Debian)
+
+Abrir la Terminal (menú > Terminal) y ejecutar:
 
 ```bash
 sudo apt update
