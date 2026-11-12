@@ -4,6 +4,12 @@ import { verificarJWT } from '../helpers/tokens.js';
 // Valida el JWT de la cookie _token y vuelve a consultar al usuario en cada petición
 // (si fue desactivado o cambió de rol, se aplica de inmediato)
 const autenticar = async (req, res, next) => {
+    res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+    });
+    
     const token = req.cookies?._token;
     if (!token) return res.redirect('/login');
 
