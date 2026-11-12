@@ -1,0 +1,63 @@
+<%- include('../partials/head') %>
+<% const e = errores || {};
+   const campo = (nombre, etiqueta, icono, { req = true, tipo = 'text', placeholder = '', max = 100, col = 'col-sm-6', auto = 'off' } = {}) => ({ nombre, etiqueta, icono, req, tipo, placeholder, max, col, auto }); %>
+<main class="pagina-login" id="contenido">
+    <div class="login-caja ancha">
+        <section class="login-marca">
+            <img src="/img/logo.svg" alt="">
+            <h1>Lonja<br>Veracruz</h1>
+            <p class="mb-0 mt-2">Cuenta de comprador</p>
+            <div class="linea"></div>
+            <ul>
+                <li><i class="icon-store" aria-hidden="true"></i>Consulta el catálogo de lotes</li>
+                <li><i class="icon-shopping-cart" aria-hidden="true"></i>Compra lotes completos</li>
+                <li><i class="icon-shopping-bag" aria-hidden="true"></i>Revisa tu historial de compras</li>
+            </ul>
+            <div class="ola" aria-hidden="true"></div>
+        </section>
+
+        <section class="login-form">
+            <h2>Crear cuenta</h2>
+            <p class="subtitulo">Regístrate como comprador de la Lonja de Veracruz</p>
+
+            <% if (Object.keys(e).length) { %>
+                <div class="alert alert-danger" role="alert"><i class="icon-circle-alert" aria-hidden="true"></i><div>Revisa los campos marcados.</div></div>
+            <% } %>
+
+            <form action="/registro" method="POST" novalidate>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="row g-3">
+                    <% [
+                        campo('nombre', 'Nombre', 'user', { placeholder: 'Tu nombre', auto: 'given-name' }),
+                        campo('apellido_paterno', 'Apellido paterno', 'user', { placeholder: 'Primer apellido', auto: 'family-name' }),
+                        campo('apellido_materno', 'Apellido materno', 'user', { req: false, placeholder: 'Segundo apellido' }),
+                        campo('correo', 'Correo electrónico', 'mail', { tipo: 'email', placeholder: 'correo@ejemplo.com', max: 150, auto: 'email' }),
+                        campo('direccion', 'Dirección', 'map-pin', { placeholder: 'Calle, número, colonia, ciudad', max: 255, col: 'col-12', auto: 'street-address' }),
+                        campo('nombre_usuario', 'Nombre de usuario', 'at-sign', { placeholder: 'Ej. ana.lopez', max: 50, col: 'col-12', auto: 'username' })
+                    ].forEach((c) => { %>
+                        <div class="col-12 <%= c.col %>">
+                            <label class="form-label" for="<%= c.nombre %>"><i class="icon-<%= c.icono %>" aria-hidden="true"></i><%= c.etiqueta %> <% if (c.req) { %><span class="req">*</span><% } %></label>
+                            <input type="<%= c.tipo %>" id="<%= c.nombre %>" name="<%= c.nombre %>" class="form-control <%= e[c.nombre] ? 'is-invalid' : '' %>"
+                                   placeholder="<%= c.placeholder %>" maxlength="<%= c.max %>" value="<%= datos[c.nombre] || '' %>" autocomplete="<%= c.auto %>" <%= c.req ? 'required' : '' %>>
+                            <%- include('../partials/campoError', { campo: c.nombre, errores: e }) %>
+                        </div>
+                    <% }) %>
+                    <% [['password', 'Contraseña', 'Mínimo 8 caracteres'], ['confirmar', 'Confirmar contraseña', 'Repite la contraseña']].forEach(([nombre, etiqueta, ph]) => { %>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label" for="<%= nombre %>"><i class="icon-lock" aria-hidden="true"></i><%= etiqueta %> <span class="req">*</span></label>
+                            <div class="input-group">
+                                <input type="password" id="<%= nombre %>" name="<%= nombre %>" class="form-control <%= e[nombre] ? 'is-invalid' : '' %>" placeholder="<%= ph %>"
+                                       minlength="8" maxlength="72" autocomplete="new-password" required>
+                                <button type="button" class="btn-ver-password" data-ver-password="<%= nombre %>" aria-label="Mostrar contraseña" title="Mostrar contraseña"><i class="icon-eye-off" aria-hidden="true"></i></button>
+                            </div>
+                            <%- include('../partials/campoError', { campo: nombre, errores: e }) %>
+                        </div>
+                    <% }) %>
+                </div>
+                <button type="submit" class="btn btn-turquesa w-100 py-2 mt-4"><i class="icon-user-plus" aria-hidden="true"></i>Crear cuenta</button>
+            </form>
+            <p class="text-center small mt-4 mb-0">¿Ya tienes cuenta? <a href="/login">Inicia sesión</a></p>
+        </section>
+    </div>
+</main>
+<%- include('../partials/footer') %>

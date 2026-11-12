@@ -1,62 +1,10 @@
 import { Op } from 'sequelize';
 import { db, Compra, Comprador, Lote, Especie, Tipo } from '../models/index.js';
-import { obtenerErrores } from '../middleware/validar.js';
-import { crearVentaEnTransaccion, ErrorVenta } from '../services/ventaService.js';
-import { lotesDisponibles } from '../services/loteService.js';
 import { paginar, datosPaginacion, entero, texto } from '../helpers/utilidades.js';
-import { esFechaISO, nombreCompleto } from '../helpers/formatos.js';
+import { esFechaISO } from '../helpers/formatos.js';
 
-// Datos de los lotes disponibles que usa el formulario (se envían como JSON seguro)
-const lotesParaFormulario = (lotes) => lotes.map((l) => ({
-    id_lte: l.id_lte,
-    kilos: Number(l.kilos),
-    numero_cajas: l.numero_cajas,
-    precio_kilo_salida: Number(l.precio_kilo_salida),
-    especies: l.especies.map((e) => ({ nombre: e.nombre, tipo: e.tipo?.nombre || '' }))
-}));
-
-const renderFormulario = async (res, { datos, errores = null, status = 200 }) => {
-    const lotes = await lotesDisponibles();
-    const codigo = entero(datos.codigo_cpr);
-    const comprador = codigo ? await Comprador.findByPk(codigo) : null;
-    res.status(status).render('compras/nueva', {
-        pagina: 'Registrar compra', seccion: 'compras',
-        datos, errores, lotes,
-        comprador: comprador ? { codigo_cpr: comprador.codigo_cpr, nombre: nombreCompleto(comprador) } : null,
-        // "<" se escapa para que el JSON no pueda cerrar la etiqueta <script>
-        lotesJSON: JSON.stringify(lotesParaFormulario(lotes)).replace(/</g, '\\u003c')
-    });
-};
-
-// GET /compras/nueva
-const formularioNueva = (req, res) => renderFormulario(res, {
-    datos: { codigo_cpr: texto(req.query.codigo_cpr), id_lte: texto(req.query.id_lte), precio_kilo_final: '' }
-});
-
-// POST /compras
-const registrar = async (req, res) => {
-    const datos = {
-        codigo_cpr: texto(req.body.codigo_cpr),
-        id_lte: texto(req.body.id_lte),
-        precio_kilo_final: texto(req.body.precio_kilo_final)
-    };
-    const errores = obtenerErrores(req);
-    if (errores) return renderFormulario(res, { datos, errores, status: 400 });
-
-    try {
-        const compra = await crearVentaEnTransaccion({
-            codigo_cpr: Number(datos.codigo_cpr),
-            id_lte: Number(datos.id_lte),
-            precio_kilo_final: datos.precio_kilo_final
-        });
-        return res.redirect(`/compras/${compra.id_cmp}?msg=compra-registrada`);
-    } catch (error) {
-        if (error instanceof ErrorVenta) {
-            return renderFormulario(res, { datos, errores: { [error.campo]: error.message }, status: 409 });
-        }
-        throw error;
-    }
-};
+// Historial interno (Administrador y Empleado), solo lectura. Las compras las crean los
+// compradores desde el catálogo; aquí no existe captura manual ni edición de precios.
 
 // GET /compras/historial
 const historial = async (req, res) => {
@@ -99,4 +47,4 @@ const detalle = async (req, res, next) => {
     res.render('compras/detalle', { pagina: 'Detalle de compra', seccion: 'compras', compra });
 };
 
-export { formularioNueva, registrar, historial, detalle };
+export { historial, detalle };

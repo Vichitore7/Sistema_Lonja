@@ -46,9 +46,9 @@
 <section class="tarjeta">
     <div class="tabla-contenedor">
         <table class="tabla">
-            <thead><tr><th>No. de lote</th><th>Fecha de registro</th><th>Especies (resumen)</th><th class="num">Kilogramos</th><th class="num">Cajas</th><th class="num">Precio de salida (kg)</th><th>Estado</th><th class="text-center">Acciones</th></tr></thead>
+            <thead><tr><th>No. de lote</th><th>Fecha de registro</th><th>Especies (resumen)</th><th class="num">Kilogramos</th><th class="num">Cajas</th><th class="num">Precio de salida (kg)</th><th class="num">Precio final (kg)</th><th>Estado</th><th class="text-center">Acciones</th></tr></thead>
             <tbody>
-            <% if (!lotes.length) { %><tr class="vacio"><td colspan="8">No hay lotes registrados con esos filtros.</td></tr><% } %>
+            <% if (!lotes.length) { %><tr class="vacio"><td colspan="9">No hay lotes registrados con esos filtros.</td></tr><% } %>
             <% lotes.forEach((l) => { %>
                 <tr>
                     <td><span class="chip-folio"><%= f.folio(l.id_lte) %></span></td>
@@ -57,12 +57,16 @@
                     <td class="num"><%= f.formatoNumero(l.kilos) %></td>
                     <td class="num"><%= l.numero_cajas %></td>
                     <td class="num"><%= f.formatoMoneda(l.precio_kilo_salida) %></td>
-                    <td><%- include('../partials/estado', { estado: l.estado }) %></td>
+                    <td class="num"><%= l.precio_kilo_final === null ? '—' : f.formatoMoneda(l.precio_kilo_final) %></td>
+                    <td><%- include('../partials/estado', { estado: l.estado }) %><% if (l.estado === 'DISPONIBLE' && l.publicado) { %> <span class="estado estado-activo"><i class="icon-store" aria-hidden="true"></i>A la venta</span><% } %></td>
                     <td>
                         <div class="acciones">
                             <a href="/lotes/<%= l.id_lte %>" class="btn-icono" title="Ver" aria-label="Ver lote <%= f.folio(l.id_lte) %>"><i class="icon-eye" aria-hidden="true"></i></a>
                             <% if (l.estado === 'DISPONIBLE') { %>
+                                <% if (!l.publicado) { %>
+                                <a href="/ventas/nueva?id_lte=<%= l.id_lte %>" class="btn-icono" title="Poner a la venta" aria-label="Poner a la venta el lote <%= f.folio(l.id_lte) %>"><i class="icon-tag" aria-hidden="true"></i></a>
                                 <a href="/lotes/<%= l.id_lte %>/editar" class="btn-icono" title="Editar" aria-label="Editar lote <%= f.folio(l.id_lte) %>"><i class="icon-pencil" aria-hidden="true"></i></a>
+                                <% } %>
                                 <form action="/lotes/<%= l.id_lte %>/retirar" method="POST" data-confirmar="¿Retirar el lote <%= f.folio(l.id_lte) %>? Ya no podrá venderse.">
                                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                                     <button type="submit" class="btn-icono peligro" title="Retirar" aria-label="Retirar lote <%= f.folio(l.id_lte) %>"><i class="icon-ban" aria-hidden="true"></i></button>

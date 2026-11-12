@@ -1,0 +1,25 @@
+<%# Confirmación de compra. Se incluye DESPUÉS de finLayout (fuera del contenedor principal)
+    para que no quede debajo del menú ni del fondo oscuro. Solo muestra datos permitidos al comprador. %>
+<div class="modal fade" id="modalCompra" tabindex="-1" aria-labelledby="tituloModalCompra" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloModalCompra">Confirmar compra</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="lista-datos mb-0">
+                    <dt>Lote:</dt><dd id="mcLote"></dd>
+                    <dt>Especies:</dt><dd id="mcEspecies"></dd>
+                    <dt>Kilogramos:</dt><dd id="mcKilos"></dd>
+                </dl>
+                <div class="importe-total"><span>Precio total</span><strong id="mcTotal"></strong></div>
+                <p class="small texto-sec mt-3 mb-0">Compras el lote completo. Al confirmar, la compra queda registrada a tu nombre.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-blanco" data-bs-dismiss="modal"><i class="icon-x" aria-hidden="true"></i>Cancelar</button>
+                <button type="button" class="btn btn-turquesa" id="mcConfirmar"><i class="icon-shopping-cart" aria-hidden="true"></i>Comprar</button>
+            </div>
+        </div>
+    </div>
+</div>

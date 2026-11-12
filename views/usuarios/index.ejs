@@ -1,18 +1,18 @@
 <%- include('../partials/head') %>
 <%- include('../partials/inicioLayout') %>
 
-<%- include('../partials/encabezado', { titulo: 'Usuarios', migas: [{ texto: 'Usuarios', url: '/usuarios' }, { texto: 'Gestión de usuarios' }] }) %>
+<%- include('../partials/encabezado', { titulo: 'Gestión de cuentas', migas: [{ texto: 'Cuentas', url: '/usuarios' }, { texto: 'Empleados y compradores' }] }) %>
 <%- include('../partials/alerts') %>
 
 <section class="tarjeta">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
         <div class="tarjeta-titulo">
             <i class="icon-users" aria-hidden="true"></i>
-            <div><h2>Gestión de usuarios</h2><p>Administra las cuentas de empleados del sistema.</p></div>
+            <div><h2>Empleados</h2><p>Crea, edita y activa o desactiva las cuentas del personal.</p></div>
         </div>
         <a href="/usuarios/nuevo" class="btn btn-turquesa"><i class="icon-user-plus" aria-hidden="true"></i>Nuevo usuario</a>
     </div>
-    <div class="alert alert-info py-2"><i class="icon-info" aria-hidden="true"></i><div>Solo se pueden crear y administrar cuentas de empleados.</div></div>
+    <div class="alert alert-info py-2"><i class="icon-info" aria-hidden="true"></i><div>No se crean administradores desde aquí ni desde el registro público.</div></div>
 
     <form class="row g-2 align-items-end mb-3" method="GET" action="/usuarios" role="search">
         <div class="col-12 col-md-4">
@@ -65,6 +65,53 @@
         </table>
     </div>
     <%- include('../partials/paginacion') %>
+</section>
+
+<section class="tarjeta" id="compradores">
+    <div class="tarjeta-titulo">
+        <i class="icon-shopping-bag" aria-hidden="true"></i>
+        <div><h2>Compradores</h2><p>Cuentas creadas con el registro público. Desactivar una cuenta impide de inmediato iniciar sesión y comprar.</p></div>
+    </div>
+    <form class="row g-2 align-items-end mb-3" method="GET" action="/usuarios#compradores" role="search">
+        <% ['nombre_usuario', 'estado'].forEach((c) => { if (filtros[c]) { %><input type="hidden" name="<%= c %>" value="<%= filtros[c] %>"><% } }) %>
+        <div class="col-12 col-md-4">
+            <label class="form-label" for="codigo">Código del comprador</label>
+            <div class="input-group"><span class="input-group-text"><i class="icon-hash" aria-hidden="true"></i></span>
+                <input type="text" inputmode="numeric" pattern="[0-9]*" id="codigo" name="codigo" class="form-control" placeholder="Ej. 001" value="<%= codigo %>" maxlength="9"></div>
+        </div>
+        <div class="col-auto"><button type="submit" class="btn btn-turquesa"><i class="icon-search" aria-hidden="true"></i>Buscar</button></div>
+        <% if (codigo) { %><div class="col-auto"><a href="/usuarios#compradores" class="btn btn-blanco"><i class="icon-refresh-cw" aria-hidden="true"></i>Ver todos</a></div><% } %>
+    </form>
+    <div class="tabla-contenedor">
+        <table class="tabla">
+            <thead><tr><th>Código</th><th>Comprador</th><th>Usuario</th><th>Correo</th><th>Estado</th><th class="text-center">Acciones</th></tr></thead>
+            <tbody>
+            <% if (!cuentasCompradores.length) { %><tr class="vacio"><td colspan="6"><%= codigo ? 'No hay una cuenta de comprador con ese código.' : 'Todavía no hay compradores registrados.' %></td></tr><% } %>
+            <% cuentasCompradores.forEach((u) => { %>
+                <tr>
+                    <td><strong><%= f.folio(u.codigo_cpr) %></strong></td>
+                    <td><%= f.nombreCompleto(u.comprador) %></td>
+                    <td><%= u.nombre_usuario %></td>
+                    <td><%= u.comprador?.correo || '—' %></td>
+                    <td><span class="estado estado-<%= u.activo ? 'activo' : 'inactivo' %>"><i class="icon-<%= u.activo ? 'circle-check' : 'ban' %>" aria-hidden="true"></i><%= u.activo ? 'Activa' : 'Inactiva' %></span></td>
+                    <td>
+                        <div class="acciones">
+                            <a href="/compradores/<%= u.codigo_cpr %>" class="btn-icono" title="Consultar y editar" aria-label="Consultar comprador <%= f.folio(u.codigo_cpr) %>"><i class="icon-eye" aria-hidden="true"></i></a>
+                            <form action="/compradores/<%= u.codigo_cpr %>/cuenta/estado" method="POST"
+                                  data-confirmar="<%= u.activo ? `¿Desactivar la cuenta ${u.nombre_usuario}? Ya no podrá iniciar sesión ni comprar.` : `¿Activar la cuenta ${u.nombre_usuario}?` %>">
+                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                <input type="hidden" name="volver" value="usuarios">
+                                <button type="submit" class="btn-icono <%= u.activo ? 'peligro' : '' %>" title="<%= u.activo ? 'Desactivar' : 'Activar' %>" aria-label="<%= u.activo ? 'Desactivar' : 'Activar' %> <%= u.nombre_usuario %>">
+                                    <i class="icon-<%= u.activo ? 'toggle-right' : 'toggle-left' %>" aria-hidden="true"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
 </section>
 
 <%- include('../partials/finLayout') %>

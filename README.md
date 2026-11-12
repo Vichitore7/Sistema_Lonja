@@ -1,6 +1,8 @@
 # Sistema Lonja de Veracruz
 
-Aplicación web para administrar la venta de producto del mar en una lonja. Permite registrar los lotes que llegan (kilos, cajas, precio de salida y las especies que contienen), vender cada lote completo a un comprador registrado en una venta presencial, y generar el reporte diario de compras en pantalla y en PDF.
+Aplicación web para administrar la venta de producto del mar en una lonja. Permite registrar los lotes que llegan (kilos, cajas, precio de salida y las especies que contienen), ponerlos a la venta con un precio final fijado por el administrador, que los compradores registrados los compren completos en línea y generar reportes de compras por rango de fechas, en pantalla y en PDF.
+
+Versión 2.0: sigue el «Manual integral actualizado» del 12/11/2026 (cuentas de compradores y ventas en línea).
 
 Proyecto de la materia Programación Web 2.
 
@@ -31,15 +33,27 @@ Autores:
 
 El flujo de trabajo de la lonja es el siguiente:
 
-1. **Inicio de sesión.** Solo entran usuarios creados por el administrador; no hay registro público.
+1. **Inicio de sesión y registro.** El personal (administrador y empleados) usa cuentas creadas por el administrador. Los compradores crean su propia cuenta en `/registro` (datos personales, usuario y contraseña), sin aprobación previa, y entran por el mismo inicio de sesión. El registro siempre crea rol COMPRADOR; no existe registro público de personal.
 2. **Tipos.** El administrador define las categorías de producto (por ejemplo: Pescado, Crustáceo, Molusco).
-3. **Lotes.** El administrador registra cada lote que llega con sus kilos, número de cajas, precio por kilo de salida y una o varias especies (nombre, tipo e imagen opcional). Un lote puede estar DISPONIBLE, VENDIDO o RETIRADO.
-4. **Inventario.** Administradores y empleados consultan los lotes disponibles y su detalle.
-5. **Compradores.** Se registran los compradores (nombre, apellidos, dirección y correo). El sistema les asigna un código automático con el que se les busca al momento de vender.
-6. **Compras.** Se vende un lote completo a un comprador indicando el precio final por kilo. El sistema calcula el total (kilos del lote por precio final), registra la compra y marca el lote como VENDIDO. Un lote no puede venderse dos veces.
-7. **Historial.** Lista de todas las compras con su detalle.
-8. **Reporte diario.** Resumen de las compras de una fecha, que se puede ver en pantalla o descargar en PDF.
-9. **Usuarios.** El administrador crea, edita y desactiva cuentas de empleados.
+3. **Lotes.** El administrador registra cada lote con sus kilos, número de cajas, fecha, precio por kilo de salida y una o varias especies (nombre, tipo e imagen opcional). Un lote nuevo inicia DISPONIBLE y sin publicar.
+4. **Gestión de ventas (publicación).** El administrador elige un lote disponible y define su `precio_kilo_final`. Ve el valor de salida, el total de la oferta (kilos × precio final) y la diferencia estimada antes de confirmar «Poner a la venta». Publicar **no** crea una compra: solo guarda el precio final y marca el lote como publicado. Puede retirarlo del catálogo mientras siga disponible.
+5. **Catálogo.** El comprador ve los lotes publicados y disponibles con kilos, cajas, fecha, especies y el **precio total**. Nunca ve el precio de salida ni el precio final por kilo.
+6. **Compra inmediata.** El comprador confirma la compra del lote completo. El servidor toma el precio de MariaDB, crea la compra y marca el lote como VENDIDO en una sola transacción. Un lote solo se puede comprar una vez.
+7. **Mis compras.** Cada comprador consulta únicamente su propio historial y el detalle de sus compras.
+8. **Inventario e historial interno.** Administradores y empleados consultan lotes y compras (el empleado, solo lectura).
+9. **Reportes.** Se elige un intervalo de fechas (inclusive) y se obtienen compras, lotes, kilos e ingresos, en pantalla o en PDF.
+10. **Cuentas.** El administrador gestiona las cuentas de empleados (crear, editar, activar/desactivar) y de compradores (buscar por código, consultar, editar datos y activar/desactivar).
+
+### Ciclo de vida de un lote
+
+| Etapa | publicado | estado | precio_kilo_final | Compra |
+|---|---|---|---|---|
+| Registrado | FALSE | DISPONIBLE | NULL | No existe |
+| En venta | TRUE | DISPONIBLE | > 0 | No existe |
+| Vendido | TRUE (histórico) | VENDIDO | Conservado | Existe una |
+| Retirado | FALSE | RETIRADO | Conservado si hubo publicación | No |
+
+Ejemplo: 100 kg, precio de salida $80/kg y precio final $120/kg → valor de salida $8,000, total de la oferta $12,000 y diferencia estimada +$4,000 (no es utilidad neta).
 
 ## Tecnologías
 
@@ -163,7 +177,8 @@ Este comando:
 
 1. Crea la base de datos si no existe.
 2. Crea las 6 tablas que falten. Nunca borra ni modifica tablas o datos existentes, por lo que es seguro ejecutarlo más de una vez.
-3. Crea el administrador inicial con `ADMIN_USER` y `ADMIN_PASSWORD`, solo si todavía no hay ningún administrador.
+3. Aplica la migración `config/migrar.js` a bases que ya existían (ver [Migrar una base existente](#migrar-una-base-existente)).
+4. Crea el administrador inicial con `ADMIN_USER` y `ADMIN_PASSWORD`, solo si todavía no hay ningún administrador.
 
 ### 6. Cargar datos de prueba (opcional)
 
@@ -171,7 +186,15 @@ Este comando:
 npm run datos:prueba
 ```
 
-Inserta 3 tipos, 5 lotes con sus especies, 2 compradores, 1 compra de ejemplo y el usuario empleado `empleado01` con contraseña `empleado123`. Solo se ejecuta si la tabla de lotes está vacía, así que no afecta datos reales.
+Inserta 3 tipos, 5 lotes con sus especies (3 de ellos publicados), 2 compradores, 1 compra hecha desde el catálogo, el usuario empleado `empleado01` (contraseña `empleado123`) y el usuario comprador `comprador01` (contraseña `comprador123`). Solo se ejecuta si la tabla de lotes está vacía, así que no afecta datos reales.
+
+Para probar los reportes por rango de fechas también hay datos con fechas pasadas:
+
+```bash
+npm run datos:historicos
+```
+
+Agrega 15 lotes registrados entre el 01/10/2026 y el 11/11/2026: 11 vendidos en distintos días (uno a las 23:50, para probar el límite del rango), 2 a la venta, 1 sin publicar y 1 retirado. También agrega 4 compradores con cuenta (`comprador_hist1` a `comprador_hist4`, contraseña `comprador123`). Se puede ejecutar sobre una base que ya tiene datos: no modifica ni borra nada y solo se carga una vez.
 
 ### 7. Iniciar el servidor
 
@@ -220,6 +243,7 @@ MariaDB debe estar en ejecución. En Linux se puede revisar con `sudo systemctl 
 |---|---|
 | `npm run instalar` | Crea la base de datos, las tablas y el administrador inicial |
 | `npm run datos:prueba` | Inserta datos de ejemplo si no hay lotes |
+| `npm run datos:historicos` | Agrega lotes y compras con fechas pasadas (octubre y noviembre de 2026) |
 | `npm run server` | Inicia el servidor con nodemon (desarrollo) |
 | `npm start` | Inicia el servidor con node |
 
@@ -238,42 +262,55 @@ MariaDB debe estar en ejecución. En Linux se puede revisar con `sudo systemctl 
 
 ## Roles y permisos
 
-| Módulo | Administrador | Empleado |
-|---|---|---|
-| Inicio de sesión, cierre de sesión y panel | Sí | Sí |
-| Inventario y detalle de lotes | Sí | Sí (solo lectura) |
-| Lotes: crear, editar y retirar, con sus especies | Sí | No |
-| Tipos | Sí | No |
-| Compradores: buscar por código, alta y edición | Sí | Sí |
-| Registrar compra e historial | Sí | Sí |
-| Reporte diario y PDF | Sí | Sí |
-| Usuarios (solo cuentas de empleado) | Sí | No |
+| Función | Administrador | Empleado | Comprador |
+|---|---|---|---|
+| Inicio y cierre de sesión | Sí | Sí | Sí |
+| Registro público (`/registro`) | No | No | Sí |
+| Panel e inventario interno | Sí | Lectura | No |
+| Crear, editar y retirar lotes | Sí | No | No |
+| Tipos y especies dentro de los lotes | Sí | No | No |
+| Publicar lotes y definir precios (Gestión de ventas) | Sí | No | No |
+| Catálogo de ofertas y comprar un lote | No | No | Sí |
+| Mis compras | No | No | Sí |
+| Historial interno de compras y reportes PDF | Sí | Sí | No |
+| Administrar empleados y compradores | Sí | No | No |
 
-Si un empleado intenta entrar a un módulo que no le corresponde, el sistema responde con una pantalla de acceso denegado (403).
+Si alguien intenta entrar a un módulo que no le corresponde, el sistema responde con una pantalla de acceso denegado (403). La captura manual de compras del sistema anterior (`/compras/nueva`) se retiró: las compras solo se crean cuando un comprador adquiere un lote publicado, así nadie puede saltarse el precio final fijado por el administrador.
 
 ## Modelo de datos
 
 La base de datos tiene 6 tablas:
 
-- **lote**: `id_lte`, `kilos`, `numero_cajas`, `precio_kilo_salida`, `fecha`, `estado` (DISPONIBLE, VENDIDO o RETIRADO).
-- **especie**: `id_epe`, `nombre`, `id_lte` (lote al que pertenece), `id_tpo` (tipo), `imagen` (opcional). Se capturan dentro del formulario de lote.
-- **tipo**: `id_tpo`, `nombre`.
-- **comprador**: `codigo_cpr` (automático), `nombre`, `apellido_paterno`, `apellido_materno`, `direccion`, `correo`.
-- **compra**: `id_cmp`, `codigo_cpr`, `precio_kilo_final`, `precio_total`, `fecha`, `id_lte` (único: un lote se vende una sola vez).
-- **usuario**: `id_usuario`, `nombre_usuario` (único), `password` (cifrada con bcrypt), `rol` (ADMINISTRADOR o EMPLEADO), `activo`.
+- **lote**: `id_lte`, `kilos`, `numero_cajas`, `precio_kilo_salida`, `fecha`, `estado` (DISPONIBLE, VENDIDO o RETIRADO), `publicado` (nuevo, BOOLEAN, por defecto FALSE) y `precio_kilo_final` (nuevo, DECIMAL(10,2), NULL hasta publicar). El total de la oferta se calcula; no se guarda.
+- **especie**: `id_epe`, `nombre`, `id_lte` (lote al que pertenece), `id_tpo` (tipo), `imagen` (opcional). Se capturan dentro del formulario de lote. Sin cambios.
+- **tipo**: `id_tpo`, `nombre`. Sin cambios.
+- **comprador**: `codigo_cpr` (automático), `nombre`, `apellido_paterno`, `apellido_materno`, `direccion`, `correo`. Sin cambios (no lleva contraseña).
+- **compra**: `id_cmp`, `codigo_cpr`, `id_lte` (único: un lote se vende una sola vez), `precio_kilo_final`, `precio_total`, `fecha` (fecha real de la compra). Sin cambios.
+- **usuario**: `id_usuario`, `nombre_usuario` (único), `password` (bcrypt), `rol` (ADMINISTRADOR, EMPLEADO o COMPRADOR), `activo`, `codigo_cpr` (FK única a `comprador`; obligatoria para COMPRADOR y NULL para el personal).
 
-La venta (`services/ventaService.js`) registra la compra y cambia el lote a VENDIDO dentro de una sola transacción. Bloquea la fila del lote mientras tanto y la restricción única sobre `id_lte` impide ventas dobles. El total siempre se calcula en el servidor como kilos del lote por precio final por kilo.
+No se agregó ninguna tabla. La compra (`services/ventaService.js`) bloquea la fila del lote (`SELECT ... FOR UPDATE`), vuelve a comprobar que esté DISPONIBLE, publicado y con precio mayor que cero, toma el comprador de la sesión y el precio de MariaDB, crea la compra y marca el lote como VENDIDO en una sola transacción. La restricción única de `compra.id_lte` es la última barrera contra la doble venta. La publicación (`services/publicacionService.js`) solo modifica `lote`.
+
+### Migrar una base existente
+
+1. Respaldar la base fuera del repositorio:
+   ```bash
+   mariadb-dump -u TU_USUARIO -p --single-transaction lonja_veracruz_2026 > ~/respaldo_lonja.sql
+   ```
+2. Ejecutar `npm run instalar`. `config/migrar.js` revisa el esquema real y solo agrega lo que falta: `lote.publicado` y `lote.precio_kilo_final`, el rol COMPRADOR y `usuario.codigo_cpr` (FK única), y una restricción CHECK que exige precio final mayor que cero en lotes publicados. Los lotes no vendidos quedan sin publicar; los vendidos quedan como históricos con el precio al que se vendieron. Nunca usa `sync({ force })` ni `sync({ alter })` y se puede ejecutar varias veces.
+3. Si algo sale mal, restaurar: `mariadb -u TU_USUARIO -p lonja_veracruz_2026 < ~/respaldo_lonja.sql`.
+
+La regla «COMPRADOR con `codigo_cpr`, personal sin él» no puede ser CHECK en MariaDB porque la columna tiene una FK con `ON UPDATE CASCADE`; se valida en el modelo `Usuario` y en los controladores.
 
 ## Estructura del proyecto
 
 ```
-config/        db.js (conexión), instalar.js, datosPrueba.js
+config/        db.js (conexión), instalar.js, migrar.js, datosPrueba.js, datosHistoricos.js
 controllers/   lógica de cada módulo: auth, dashboard, inventario, lote, tipo,
-               comprador, compra, reporte, usuario
+               comprador, compra, reporte, usuario, publicacion, catalogo, misCompras
 models/        modelos de Sequelize y sus relaciones (index.js)
 routes/        rutas de Express de cada módulo
-middleware/    autenticar, autorizarRol, validar, errores, seguridad (CSRF y límite de login)
-services/      ventaService, reporteService, loteService
+middleware/    autenticar, autorizarRol, validar, errores, seguridad (CSRF y límites de login, registro y compra)
+services/      ventaService (compra), publicacionService, reporteService, loteService
 helpers/       formatos, mensajes, utilidades, tokens, imagenes, reportePdf
 views/         plantillas EJS por módulo y partials compartidos
 public/        css, js, img, vendor/bootstrap, uploads/especies (imágenes subidas)
@@ -282,10 +319,13 @@ index.js       punto de entrada del servidor
 
 ## Seguridad
 
-- Sesión con JWT en cookie HttpOnly (`SameSite=Lax`, `Secure` en producción). En cada petición se vuelve a consultar al usuario, así que un empleado desactivado pierde el acceso de inmediato.
+- Sesión con JWT en cookie HttpOnly (`SameSite=Lax`, `Secure` en producción). En cada petición se vuelve a consultar al usuario, así que una cuenta desactivada pierde el acceso (y la posibilidad de comprar) de inmediato. Las sesiones se invalidan al reiniciar el servidor.
 - Roles verificados en el servidor.
 - Token CSRF en todos los formularios.
-- Límite de 5 intentos de inicio de sesión cada 15 minutos, con mensaje de error genérico.
+- Límite de 5 intentos de inicio de sesión cada 15 minutos (mensaje genérico), de 10 registros por equipo cada 15 minutos y de 20 intentos de compra por cuenta cada minuto.
+- La compra nunca confía en `codigo_cpr`, `precio_kilo_final` ni `precio_total` enviados por el navegador; el detalle `/mis-compras/:id` comprueba la pertenencia (IDOR).
+- Las vistas del comprador no contienen precios internos ni en HTML oculto, JSON o scripts.
+- Páginas privadas con `Cache-Control: no-store`.
 - Validación de datos con express-validator, consultas parametrizadas con Sequelize y salida escapada en EJS.
 - Imágenes JPG, PNG o WEBP de hasta 2 MB, validando extensión, tipo MIME y firma del archivo; se guardan con un nombre generado.
 - Cabeceras seguras con helmet; los errores no muestran detalles internos al usuario.
@@ -294,15 +334,20 @@ index.js       punto de entrada del servidor
 
 | Ruta | Descripción |
 |---|---|
-| `/login` | Inicio de sesión |
-| `/dashboard` | Panel principal |
-| `/inventario` | Lotes disponibles |
-| `/lotes`, `/lotes/nuevo`, `/lotes/:id`, `/lotes/:id/editar`, `/lotes/:id/retirar` | Administración de lotes |
-| `/tipos` | Tipos de producto |
-| `/compradores` | Compradores |
-| `/compras/nueva`, `/compras/historial`, `/compras/:id` | Ventas |
-| `/reportes`, `/reportes/diario?fecha=`, `/reportes/diario/pdf?fecha=` | Reportes |
-| `/usuarios` | Cuentas de empleados |
+| `/login`, `POST /logout` | Inicio y cierre de sesión |
+| `/registro` | Alta de comprador (Comprador + Usuario en una transacción) |
+| `/dashboard`, `/inventario` | Panel e inventario interno (A/E) |
+| `/lotes`, `/lotes/nuevo`, `/lotes/:id`, `/lotes/:id/editar`, `POST /lotes/:id/retirar` | Administración de lotes (A) |
+| `/tipos` | Tipos de producto (A) |
+| `/ventas/administrar`, `/ventas/nueva`, `POST /ventas/publicar`, `POST /ventas/:id/despublicar` | Gestión de ventas (A) |
+| `/catalogo`, `/catalogo/:id`, `POST /catalogo/:id/comprar` | Catálogo y compra inmediata (C) |
+| `/mis-compras`, `/mis-compras/:id` | Historial personal (C) |
+| `/compras/historial`, `/compras/:id` | Historial interno de compras (A/E) |
+| `/compradores`, `/compradores/:codigo/...` | Gestión administrativa de compradores y sus cuentas (A) |
+| `/usuarios` | Gestión de cuentas: empleados y compradores (A) |
+| `/reportes?desde=&hasta=`, `/reportes/pdf?desde=&hasta=` | Reporte por intervalo de fechas y PDF (A/E) |
+
+A = Administrador, E = Empleado, C = Comprador.
 
 ## Flujo de trabajo con Git
 

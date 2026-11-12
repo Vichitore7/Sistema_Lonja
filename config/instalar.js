@@ -1,5 +1,6 @@
 // Preparación inicial del sistema (se ejecuta UNA vez al instalar): npm run instalar
 // 1) crea la base de datos si no existe  2) crea las tablas que falten (sin force ni alter)
+// 2b) agrega las columnas nuevas a tablas existentes (config/migrar.js)
 // 3) crea el administrador inicial con ADMIN_USER / ADMIN_PASSWORD del .env
 import mariadb from 'mariadb';
 import dotenv from 'dotenv';
@@ -17,6 +18,8 @@ try {
 
     const { db, Usuario } = await import('../models/index.js');
     await db.sync(); // solo crea tablas inexistentes; nunca borra ni altera datos
+    const { migrar } = await import('./migrar.js');
+    await migrar(db); // agrega columnas nuevas a tablas que ya existían (cuentas de comprador)
     console.log('Tablas: lote, especie, tipo, comprador, compra, usuario');
 
     const hayAdmin = await Usuario.count({ where: { rol: 'ADMINISTRADOR' } });

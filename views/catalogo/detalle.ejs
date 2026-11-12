@@ -1,0 +1,52 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+<% const o = oferta; const nombres = o.especies.map((es) => es.nombre).join(', '); %>
+
+<%- include('../partials/encabezado', { titulo: 'Catálogo', migas: [{ texto: 'Catálogo', url: '/catalogo' }, { texto: `Lote ${f.folio(o.id_lte)}` }] }) %>
+<%- include('../partials/alerts') %>
+
+<section class="tarjeta">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div class="tarjeta-titulo">
+            <i class="icon-layers" aria-hidden="true"></i>
+            <div><h2>Lote <%= f.folio(o.id_lte) %></h2><p>Oferta disponible. Se vende el lote completo.</p></div>
+        </div>
+        <a href="/catalogo" class="btn btn-blanco"><i class="icon-arrow-left" aria-hidden="true"></i>Volver al catálogo</a>
+    </div>
+
+    <div class="franja"><i class="icon-info" aria-hidden="true"></i>Información del lote</div>
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-lg-4"><div class="dato"><i class="icon-weight" aria-hidden="true"></i><div><small>Kilogramos</small><strong><%= f.formatoKg(o.kilos) %></strong></div></div></div>
+        <div class="col-6 col-lg-4"><div class="dato"><i class="icon-package" aria-hidden="true"></i><div><small>Cajas</small><strong><%= o.numero_cajas %></strong></div></div></div>
+        <div class="col-12 col-lg-4"><div class="dato"><i class="icon-calendar" aria-hidden="true"></i><div><small>Fecha del lote</small><strong><%= f.formatoFecha(o.fecha) %></strong></div></div></div>
+    </div>
+
+    <div class="franja"><i class="icon-fish" aria-hidden="true"></i>Especies del lote</div>
+    <div class="row g-3 mb-3">
+        <% o.especies.forEach((es) => { %>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="tarjeta-especie">
+                    <% if (es.imagen) { %><img src="/uploads/especies/<%= es.imagen %>" alt="<%= es.nombre %>" class="galeria-especie mb-2">
+                    <% } else { %><div class="galeria-especie mb-2 d-grid texto-sec sin-imagen"><i class="icon-fish" aria-hidden="true"></i></div><% } %>
+                    <strong class="d-block"><%= es.nombre %></strong>
+                    <span class="texto-sec small"><%= es.tipo %></span>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+
+    <div class="row justify-content-end">
+        <div class="col-12 col-lg-5">
+            <div class="importe-total"><span>Precio total</span><strong><%= f.formatoMoneda(o.total) %></strong></div>
+            <form class="mt-3" method="POST" action="/catalogo/<%= o.id_lte %>/comprar" data-compra
+                  data-lote="<%= f.folio(o.id_lte) %>" data-especies="<%= nombres %>" data-kilos="<%= f.formatoKg(o.kilos) %>" data-total="<%= f.formatoMoneda(o.total) %>">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-turquesa w-100 py-2"><i class="icon-shopping-cart" aria-hidden="true"></i>Comprar lote</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<%- include('../partials/finLayout') %>
+<%- include('../partials/modalCompra') %>
+<%- include('../partials/footer', { scripts: ['catalogo.js'] }) %>

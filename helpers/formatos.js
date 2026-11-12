@@ -5,6 +5,8 @@ const moneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MX
 const numero2 = new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export const formatoMoneda = (valor) => moneda.format(Number(valor || 0));
+// +$4,000.00 / -$150.00 (diferencia estimada entre total de oferta y valor de salida)
+export const formatoDiferencia = (valor) => `${Number(valor) > 0 ? '+' : ''}${moneda.format(Number(valor || 0))}`;
 export const formatoKg = (valor) => `${numero2.format(Number(valor || 0))} kg`;
 export const formatoNumero = (valor) => numero2.format(Number(valor || 0));
 

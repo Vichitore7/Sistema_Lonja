@@ -13,7 +13,7 @@
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <a href="/compras/historial" class="btn btn-blanco"><i class="icon-arrow-left" aria-hidden="true"></i>Volver al historial</a>
-            <a href="/reportes/diario?fecha=<%= f.fechaISO(c.fecha) %>" class="btn btn-blanco"><i class="icon-chart-column" aria-hidden="true"></i>Reporte del día</a>
+            <a href="/reportes?desde=<%= f.fechaISO(c.fecha) %>&hasta=<%= f.fechaISO(c.fecha) %>" class="btn btn-blanco"><i class="icon-chart-column" aria-hidden="true"></i>Reporte del día</a>
         </div>
     </div>
 
@@ -30,7 +30,7 @@
         <div class="col-12 col-lg-4">
             <div class="franja"><i class="icon-users" aria-hidden="true"></i>Datos del comprador</div>
             <dl class="lista-datos">
-                <dt>Código:</dt><dd><a href="/compradores/<%= cp.codigo_cpr %>"><%= f.folio(cp.codigo_cpr) %></a></dd>
+                <dt>Código:</dt><dd><% if (usuario.rol === 'ADMINISTRADOR') { %><a href="/compradores/<%= cp.codigo_cpr %>"><%= f.folio(cp.codigo_cpr) %></a><% } else { %><%= f.folio(cp.codigo_cpr) %><% } %></dd>
                 <dt>Nombre:</dt><dd><%= f.nombreCompleto(cp) %></dd>
                 <dt>Dirección:</dt><dd><%= cp.direccion %></dd>
                 <dt>Correo:</dt><dd><%= cp.correo || '—' %></dd>

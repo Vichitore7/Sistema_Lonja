@@ -6,7 +6,7 @@
     <div class="dropdown usuario-menu">
         <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
             <span class="avatar"><i class="icon-user" aria-hidden="true"></i></span>
-            <span><%= usuario.rol === 'ADMINISTRADOR' ? 'Administrador' : 'Empleado' %></span>
+            <span><%= { ADMINISTRADOR: 'Administrador', EMPLEADO: 'Empleado', COMPRADOR: 'Comprador' }[usuario.rol] %></span>
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
             <li><span class="dropdown-item-text small texto-sec">Sesión: <strong><%= usuario.nombre_usuario %></strong></span></li>

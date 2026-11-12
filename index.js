@@ -18,6 +18,9 @@ import compradorRouter from './routes/compradorRouter.js';
 import compraRouter from './routes/compraRouter.js';
 import reporteRouter from './routes/reporteRouter.js';
 import usuarioRouter from './routes/usuarioRouter.js';
+import publicacionRouter from './routes/publicacionRouter.js';
+import catalogoRouter from './routes/catalogoRouter.js';
+import misComprasRouter from './routes/misComprasRouter.js';
 
 dotenv.config({ path: '.env' });
 
@@ -68,6 +71,9 @@ app.use('/compradores', compradorRouter);
 app.use('/compras', compraRouter);
 app.use('/reportes', reporteRouter);
 app.use('/usuarios', usuarioRouter);
+app.use('/ventas', publicacionRouter);
+app.use('/catalogo', catalogoRouter);
+app.use('/mis-compras', misComprasRouter);
 
 app.use(noEncontrado);
 app.use(manejarErrores);

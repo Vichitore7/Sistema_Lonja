@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
 import db from '../config/db.js';
 
-// Los compradores NO tienen cuenta: solo son datos para registrar compras
+// Datos del comprador. Su cuenta para iniciar sesión está en Usuario (rol COMPRADOR, codigo_cpr)
 const Comprador = db.define('comprador', {
     codigo_cpr: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     nombre: { type: DataTypes.STRING(100), allowNull: false },

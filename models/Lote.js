@@ -10,7 +10,11 @@ const Lote = db.define('lote', {
     precio_kilo_salida: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
     fecha: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     // Añadido acordado: un lote nuevo inicia DISPONIBLE
-    estado: { type: DataTypes.ENUM(...ESTADOS_LOTE), allowNull: false, defaultValue: 'DISPONIBLE' }
+    estado: { type: DataTypes.ENUM(...ESTADOS_LOTE), allowNull: false, defaultValue: 'DISPONIBLE' },
+    // Las dos columnas nuevas autorizadas: el Administrador pone el lote a la venta (publicado)
+    // y fija el precio de venta por kg (precio_kilo_final). NULL mientras no se publique.
+    publicado: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+    precio_kilo_final: { type: DataTypes.DECIMAL(10, 2), allowNull: true }
 });
 
 export default Lote;

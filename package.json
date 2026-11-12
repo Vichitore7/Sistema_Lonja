@@ -8,7 +8,8 @@
     "server": "nodemon index.js",
     "start": "node index.js",
     "instalar": "node config/instalar.js",
-    "datos:prueba": "node config/datosPrueba.js"
+    "datos:prueba": "node config/datosPrueba.js",
+    "datos:historicos": "node config/datosHistoricos.js"
   },
   "author": "Victor Federico Caldera Arellano y Alejandra Naomi Muciño Hernández (Programación Web 2)",
   "license": "MIT",

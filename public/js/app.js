@@ -20,4 +20,16 @@
             boton.setAttribute('aria-label', mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña');
         });
     });
+
+    // Reporte por fechas: la fecha inicial no puede ser posterior a la final (el servidor también lo valida)
+    const rango = document.getElementById('formRango');
+    if (rango) rango.addEventListener('submit', (e) => {
+        const desde = rango.elements.desde.value, hasta = rango.elements.hasta.value;
+        if (desde && hasta && desde > hasta) {
+            e.preventDefault();
+            rango.elements.hasta.setCustomValidity('La fecha final debe ser igual o posterior a la inicial');
+            rango.elements.hasta.reportValidity();
+        }
+    });
+    if (rango) rango.elements.hasta.addEventListener('input', () => rango.elements.hasta.setCustomValidity(''));
 })();

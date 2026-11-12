@@ -8,7 +8,7 @@
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
         <div class="tarjeta-titulo">
             <i class="icon-users" aria-hidden="true"></i>
-            <div><h2>Compradores</h2><p>Consulta, registra y administra los compradores del sistema.</p></div>
+            <div><h2>Compradores</h2><p>Consulta, registra y administra los compradores y sus cuentas.</p></div>
         </div>
         <a href="/compradores/nuevo" class="btn btn-turquesa"><i class="icon-user-plus" aria-hidden="true"></i>Nuevo comprador</a>
     </div>
@@ -27,15 +27,21 @@
 
     <div class="tabla-contenedor">
         <table class="tabla">
-            <thead><tr><th>Código</th><th>Nombre completo</th><th>Correo</th><th>Dirección</th><th class="text-center">Acciones</th></tr></thead>
+            <thead><tr><th>Código</th><th>Nombre completo</th><th>Correo</th><th>Dirección</th><th>Cuenta</th><th class="text-center">Acciones</th></tr></thead>
             <tbody>
-            <% if (!compradores.length) { %><tr class="vacio"><td colspan="5"><%= codigo ? 'No existe un comprador con ese código.' : 'Todavía no hay compradores registrados.' %></td></tr><% } %>
+            <% if (!compradores.length) { %><tr class="vacio"><td colspan="6"><%= codigo ? 'No existe un comprador con ese código.' : 'Todavía no hay compradores registrados.' %></td></tr><% } %>
             <% compradores.forEach((c) => { %>
                 <tr>
                     <td><strong><%= f.folio(c.codigo_cpr) %></strong></td>
                     <td><%= f.nombreCompleto(c) %></td>
                     <td><%= c.correo || '—' %></td>
                     <td><%= c.direccion %></td>
+                    <td>
+                        <% if (!c.cuenta) { %><span class="texto-sec small">Sin cuenta</span>
+                        <% } else { %>
+                            <span class="estado estado-<%= c.cuenta.activo ? 'activo' : 'inactivo' %>"><i class="icon-<%= c.cuenta.activo ? 'circle-check' : 'ban' %>" aria-hidden="true"></i><%= c.cuenta.activo ? 'Activa' : 'Inactiva' %></span>
+                        <% } %>
+                    </td>
                     <td>
                         <div class="acciones">
                             <a href="/compradores/<%= c.codigo_cpr %>" class="btn-icono" title="Ver" aria-label="Ver comprador <%= f.folio(c.codigo_cpr) %>"><i class="icon-eye" aria-hidden="true"></i></a>

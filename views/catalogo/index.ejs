@@ -1,0 +1,62 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+
+<%- include('../partials/encabezado', { titulo: 'Catálogo', subtitulo: 'Lotes a la venta. Elige uno y cómpralo completo.', fecha: true }) %>
+<%- include('../partials/alerts') %>
+
+<section class="tarjeta">
+    <form class="row g-2 align-items-end mb-4" method="GET" action="/catalogo" role="search">
+        <div class="col-12 col-md-5">
+            <label class="form-label" for="buscar">Buscar</label>
+            <div class="input-group"><span class="input-group-text"><i class="icon-search" aria-hidden="true"></i></span>
+                <input type="search" id="buscar" name="buscar" class="form-control" placeholder="Número de lote o especie…" value="<%= filtros.buscar %>"></div>
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="id_tpo">Tipo</label>
+            <select id="id_tpo" name="id_tpo" class="form-select">
+                <option value="">Todos</option>
+                <% tipos.forEach((t) => { %><option value="<%= t.id_tpo %>" <%= filtros.id_tpo === String(t.id_tpo) ? 'selected' : '' %>><%= t.nombre %></option><% }) %>
+            </select>
+        </div>
+        <div class="col-auto"><button type="submit" class="btn btn-turquesa"><i class="icon-search" aria-hidden="true"></i>Buscar</button></div>
+        <div class="col-auto"><a href="/catalogo" class="btn btn-blanco"><i class="icon-refresh-cw" aria-hidden="true"></i>Limpiar</a></div>
+    </form>
+
+    <% if (!ofertas.length) { %>
+        <p class="text-center texto-sec py-4 mb-0">No hay lotes a la venta en este momento.</p>
+    <% } %>
+    <div class="row g-3">
+        <% ofertas.forEach((o) => {
+            const conImagen = o.especies.find((es) => es.imagen);
+            const nombres = o.especies.map((es) => es.nombre).join(', ');
+            const tiposLote = [...new Set(o.especies.map((es) => es.tipo).filter(Boolean))]; %>
+            <div class="col-12 col-md-6 col-xl-4">
+                <article class="tarjeta-lote">
+                    <a class="foto" href="/catalogo/<%= o.id_lte %>" aria-label="Ver lote <%= f.folio(o.id_lte) %>">
+                        <% if (conImagen) { %><img src="/uploads/especies/<%= conImagen.imagen %>" alt="<%= conImagen.nombre %>"><% } else { %><i class="icon-fish" aria-hidden="true"></i><% } %>
+                    </a>
+                    <div class="cuerpo">
+                        <h3><a href="/catalogo/<%= o.id_lte %>">Lote <%= f.folio(o.id_lte) %></a></h3>
+                        <p class="especies"><%= nombres %><% if (tiposLote.length) { %> · <%= tiposLote.join(', ') %><% } %></p>
+                        <dl class="datos">
+                            <dt>Kilogramos</dt><dd><%= f.formatoKg(o.kilos) %></dd>
+                            <dt>Cajas</dt><dd><%= o.numero_cajas %></dd>
+                            <dt>Fecha del lote</dt><dd><%= f.formatoFecha(o.fecha) %></dd>
+                        </dl>
+                        <div class="total"><span>Precio total</span><strong><%= f.formatoMoneda(o.total) %></strong></div>
+                        <form method="POST" action="/catalogo/<%= o.id_lte %>/comprar" data-compra
+                              data-lote="<%= f.folio(o.id_lte) %>" data-especies="<%= nombres %>" data-kilos="<%= f.formatoKg(o.kilos) %>" data-total="<%= f.formatoMoneda(o.total) %>">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <button type="submit" class="btn btn-turquesa w-100"><i class="icon-shopping-cart" aria-hidden="true"></i>Comprar lote</button>
+                        </form>
+                    </div>
+                </article>
+            </div>
+        <% }) %>
+    </div>
+    <%- include('../partials/paginacion', { nombreRegistros: 'lotes' }) %>
+</section>
+
+<%- include('../partials/finLayout') %>
+<%- include('../partials/modalCompra') %>
+<%- include('../partials/footer', { scripts: ['catalogo.js'] }) %>

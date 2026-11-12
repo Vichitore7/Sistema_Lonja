@@ -1,0 +1,32 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+
+<%- include('../partials/encabezado', { titulo: 'Mis compras', subtitulo: 'Lotes que has comprado en la lonja.' }) %>
+<%- include('../partials/alerts') %>
+
+<section class="tarjeta">
+    <div class="tabla-contenedor">
+        <table class="tabla">
+            <thead><tr><th>Folio</th><th>Fecha de compra</th><th>Lote</th><th>Especies</th><th class="num">Kilogramos</th><th class="num">Cajas</th><th class="num">Total</th><th class="text-center">Acciones</th></tr></thead>
+            <tbody>
+            <% if (!compras.length) { %><tr class="vacio"><td colspan="8">Todavía no has comprado ningún lote. <a href="/catalogo">Ver el catálogo</a></td></tr><% } %>
+            <% compras.forEach((c) => { %>
+                <tr>
+                    <td><strong><%= f.folio(c.id_cmp) %></strong></td>
+                    <td><%= f.formatoFechaHora(c.fecha) %></td>
+                    <td><span class="chip-folio"><%= f.folio(c.id_lte) %></span></td>
+                    <td><%= c.lote.especies.map((es) => es.nombre).join(', ') %></td>
+                    <td class="num"><%= f.formatoKg(c.lote.kilos) %></td>
+                    <td class="num"><%= c.lote.numero_cajas %></td>
+                    <td class="num fw-bold"><%= f.formatoMoneda(c.precio_total) %></td>
+                    <td><div class="acciones"><a href="/mis-compras/<%= c.id_cmp %>" class="btn-icono" title="Ver detalle" aria-label="Ver compra <%= f.folio(c.id_cmp) %>"><i class="icon-eye" aria-hidden="true"></i></a></div></td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <%- include('../partials/paginacion', { nombreRegistros: 'compras' }) %>
+</section>
+
+<%- include('../partials/finLayout') %>
+<%- include('../partials/footer') %>

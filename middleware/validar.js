@@ -55,11 +55,9 @@ export const validarComprador = [
         .isEmail().withMessage('Escribe un correo válido').isLength({ max: 150 }).withMessage('Máximo 150 caracteres')
 ];
 
-// ---------- Compra ----------
-export const validarCompra = [
-    body('codigo_cpr').trim().notEmpty().withMessage('El código del comprador es obligatorio').bail()
-        .isInt({ min: 1 }).withMessage('El código debe ser un número'),
-    body('id_lte').trim().notEmpty().withMessage('Selecciona un lote disponible').bail()
+// ---------- Publicación de un lote (validarPrecio) ----------
+export const validarPublicacion = [
+    body('id_lte').trim().notEmpty().withMessage('Selecciona un lote').bail()
         .isInt({ min: 1 }).withMessage('Lote inválido'),
     decimal('precio_kilo_final', 'Precio final por kg', { min: 0, excluirMin: true })
 ];
@@ -72,6 +70,18 @@ const reglaConfirmar = (campo = 'password') =>
 const reglaNombreUsuario = body('nombre_usuario').trim()
     .notEmpty().withMessage('El nombre de usuario es obligatorio').bail()
     .matches(/^[A-Za-z0-9._-]{3,50}$/).withMessage('Usa de 3 a 50 caracteres: letras, números, punto, guion o guion bajo');
+
+// ---------- Registro de comprador (datos personales + cuenta) ----------
+export const validarRegistroComprador = [
+    ...validarComprador.slice(0, 4),
+    // En el registro el correo es obligatorio (sirve para contactar al comprador)
+    body('correo').trim().notEmpty().withMessage('El correo es obligatorio').bail()
+        .isEmail().withMessage('Escribe un correo válido').isLength({ max: 150 }).withMessage('Máximo 150 caracteres'),
+    reglaNombreUsuario, reglaPassword(), reglaConfirmar()
+];
+
+// ---------- Cuenta de un comprador (gestión del administrador) ----------
+export const validarCuentaComprador = [reglaNombreUsuario, reglaPassword(), reglaConfirmar()];
 
 export const validarAltaEmpleado = [reglaNombreUsuario, reglaPassword(), reglaConfirmar()];
 export const validarEdicionEmpleado = [reglaNombreUsuario];

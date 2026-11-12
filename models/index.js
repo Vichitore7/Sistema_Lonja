@@ -24,4 +24,8 @@ Compra.belongsTo(Comprador, { foreignKey: { name: 'codigo_cpr', allowNull: false
 Lote.hasOne(Compra, { foreignKey: { name: 'id_lte', allowNull: false, unique: true }, as: 'compra', ...restringir });
 Compra.belongsTo(Lote, { foreignKey: { name: 'id_lte', allowNull: false, unique: true }, as: 'lote', ...restringir });
 
+// Comprador 1:0..1 Usuario -> Usuario.codigo_cpr FK UNIQUE NULL (solo las cuentas COMPRADOR la usan)
+Comprador.hasOne(Usuario, { foreignKey: { name: 'codigo_cpr', allowNull: true, unique: true }, as: 'cuenta', ...restringir });
+Usuario.belongsTo(Comprador, { foreignKey: { name: 'codigo_cpr', allowNull: true, unique: true }, as: 'comprador', ...restringir });
+
 export { db, Lote, Especie, Tipo, Comprador, Compra, Usuario };

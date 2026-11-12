@@ -1,44 +1,40 @@
 <%- include('../partials/head') %>
 <%- include('../partials/inicioLayout') %>
 
-<%- include('../partials/encabezado', { titulo: 'Reportes', migas: [{ texto: 'Reportes', url: '/reportes' }, { texto: 'Reportes diarios' }] }) %>
+<%- include('../partials/encabezado', { titulo: 'Reportes', migas: [{ texto: 'Reportes', url: '/reportes' }, { texto: 'Reportes de compras' }] }) %>
 <%- include('../partials/alerts') %>
 
 <section class="tarjeta">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
         <div class="tarjeta-titulo">
             <i class="icon-chart-column" aria-hidden="true"></i>
-            <div><h2>Reportes diarios</h2><p>Consulta el resumen de ventas por día y genera reportes.</p></div>
+            <div><h2>Reportes de compras</h2><p>Genera el reporte de un intervalo de fechas o consulta el resumen de cada jornada.</p></div>
         </div>
-        <form class="d-flex gap-2 align-items-end flex-wrap" method="GET" action="/reportes/diario">
-            <div>
-                <label class="form-label" for="fechaDia">Consultar un día</label>
-                <input type="date" id="fechaDia" name="fecha" class="form-control" value="<%= hoy %>" max="<%= hoy %>">
-            </div>
-            <button type="submit" class="btn btn-navy"><i class="icon-file-text" aria-hidden="true"></i>Ver reporte</button>
-        </form>
     </div>
 
-    <form class="row g-2 align-items-end mb-3 mt-1" method="GET" action="/reportes" role="search">
-        <div class="col-12 col-md-6">
-            <span class="form-label d-block">Fecha</span>
-            <div class="d-flex gap-2 align-items-center">
-                <div class="input-group"><span class="input-group-text"><i class="icon-calendar" aria-hidden="true"></i></span>
-                    <input type="date" name="desde" class="form-control" value="<%= filtros.desde %>" aria-label="Desde"></div>
-                <span>a</span>
-                <div class="input-group"><span class="input-group-text"><i class="icon-calendar" aria-hidden="true"></i></span>
-                    <input type="date" name="hasta" class="form-control" value="<%= filtros.hasta %>" aria-label="Hasta"></div>
-            </div>
+    <!-- Reporte por intervalo de fechas (inclusive). Única exportación: PDF -->
+    <div class="franja"><i class="icon-file-text" aria-hidden="true"></i>Reporte por intervalo de fechas</div>
+    <% if (errorRango) { %><div class="alert alert-danger" role="alert"><i class="icon-circle-alert" aria-hidden="true"></i><div><%= errorRango %></div></div><% } %>
+    <form class="row g-2 align-items-end mb-4" method="GET" action="/reportes" id="formRango" novalidate>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="r-desde">Fecha inicial</label>
+            <input type="date" id="r-desde" name="desde" class="form-control <%= errorRango ? 'is-invalid' : '' %>" value="<%= rango.desde %>" max="<%= hoy %>" required>
         </div>
-        <div class="col-auto"><button type="submit" class="btn btn-turquesa"><i class="icon-search" aria-hidden="true"></i>Buscar</button></div>
-        <div class="col-auto"><a href="/reportes" class="btn btn-blanco"><i class="icon-refresh-cw" aria-hidden="true"></i>Limpiar</a></div>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="r-hasta">Fecha final</label>
+            <input type="date" id="r-hasta" name="hasta" class="form-control <%= errorRango ? 'is-invalid' : '' %>" value="<%= rango.hasta %>" max="<%= hoy %>" required>
+        </div>
+        <div class="col-auto"><button type="submit" class="btn btn-navy"><i class="icon-file-text" aria-hidden="true"></i>Ver reporte</button></div>
+        <div class="col-auto"><button type="submit" formaction="/reportes/pdf" class="btn btn-turquesa"><i class="icon-file-down" aria-hidden="true"></i>Exportar PDF</button></div>
+        <div class="col-12"><div class="form-text">Se incluyen las compras de ambas fechas completas (hora de Veracruz). Las ofertas publicadas que no se han comprado no cuentan.</div></div>
     </form>
 
+    <div class="franja"><i class="icon-calendar" aria-hidden="true"></i>Jornadas con ventas</div>
     <div class="tabla-contenedor">
         <table class="tabla">
             <thead><tr><th>Fecha</th><th class="num">N.º de compras</th><th class="num">Kilogramos vendidos</th><th class="num">Importe total</th><th class="text-center">Acciones</th></tr></thead>
             <tbody>
-            <% if (!jornadas.length) { %><tr class="vacio"><td colspan="5">No hay jornadas con ventas en ese periodo.</td></tr><% } %>
+            <% if (!jornadas.length) { %><tr class="vacio"><td colspan="5">Todavía no hay jornadas con ventas.</td></tr><% } %>
             <% jornadas.forEach((j) => { %>
                 <tr>
                     <td><strong><%= f.isoATexto(j.fecha) %></strong></td>
@@ -47,8 +43,8 @@
                     <td class="num fw-bold"><%= f.formatoMoneda(j.importe) %></td>
                     <td>
                         <div class="acciones">
-                            <a href="/reportes/diario?fecha=<%= j.fecha %>" class="btn-icono" title="Ver reporte" aria-label="Ver reporte del <%= f.isoATexto(j.fecha) %>"><i class="icon-eye" aria-hidden="true"></i></a>
-                            <a href="/reportes/diario/pdf?fecha=<%= j.fecha %>" class="btn-icono" title="Exportar PDF" aria-label="Exportar PDF del <%= f.isoATexto(j.fecha) %>"><i class="icon-file-down" aria-hidden="true"></i></a>
+                            <a href="/reportes?desde=<%= j.fecha %>&hasta=<%= j.fecha %>" class="btn-icono" title="Ver reporte" aria-label="Ver reporte del <%= f.isoATexto(j.fecha) %>"><i class="icon-eye" aria-hidden="true"></i></a>
+                            <a href="/reportes/pdf?desde=<%= j.fecha %>&hasta=<%= j.fecha %>" class="btn-icono" title="Exportar PDF" aria-label="Exportar PDF del <%= f.isoATexto(j.fecha) %>"><i class="icon-file-down" aria-hidden="true"></i></a>
                         </div>
                     </td>
                 </tr>

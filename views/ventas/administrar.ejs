@@ -1,0 +1,76 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+
+<%- include('../partials/encabezado', { titulo: 'Gestión de ventas', subtitulo: 'Pon lotes a la venta y define su precio final.', fecha: true,
+    boton: { url: '/ventas/nueva', texto: 'Nueva venta', icono: 'plus' } }) %>
+<%- include('../partials/alerts') %>
+
+<form class="tarjeta py-3" method="GET" action="/ventas/administrar" role="search">
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-4">
+            <label class="form-label" for="id_lte">Número de lote</label>
+            <div class="input-group"><span class="input-group-text"><i class="icon-hash" aria-hidden="true"></i></span>
+                <input type="text" inputmode="numeric" pattern="[0-9]*" id="id_lte" name="id_lte" class="form-control" placeholder="Ej. 001" value="<%= buscar %>" maxlength="9"></div>
+        </div>
+        <div class="col-auto"><button type="submit" class="btn btn-turquesa"><i class="icon-search" aria-hidden="true"></i>Buscar</button></div>
+        <% if (buscar) { %><div class="col-auto"><a href="/ventas/administrar" class="btn btn-blanco"><i class="icon-refresh-cw" aria-hidden="true"></i>Ver todos</a></div><% } %>
+    </div>
+</form>
+
+<section class="tarjeta">
+    <div class="franja"><i class="icon-store" aria-hidden="true"></i>Lotes a la venta (publicados)</div>
+    <div class="tabla-contenedor mb-4">
+        <table class="tabla">
+            <thead><tr><th>Lote</th><th>Fecha</th><th>Especies</th><th class="num">Kilogramos</th><th class="num">Precio de salida (kg)</th><th class="num">Precio final (kg)</th><th class="num">Total de oferta</th><th class="num">Diferencia estimada</th><th class="text-center">Acciones</th></tr></thead>
+            <tbody>
+            <% if (!publicados.length) { %><tr class="vacio"><td colspan="9">No hay lotes a la venta.</td></tr><% } %>
+            <% publicados.forEach(({ lote: l, totalOferta, diferencia }) => { %>
+                <tr>
+                    <td><a href="/lotes/<%= l.id_lte %>" class="chip-folio"><%= f.folio(l.id_lte) %></a></td>
+                    <td><%= f.formatoFecha(l.fecha) %></td>
+                    <td><%= l.especies.map((e) => e.nombre).join(', ') %></td>
+                    <td class="num"><%= f.formatoKg(l.kilos) %></td>
+                    <td class="num"><%= f.formatoMoneda(l.precio_kilo_salida) %></td>
+                    <td class="num"><%= f.formatoMoneda(l.precio_kilo_final) %></td>
+                    <td class="num fw-bold"><%= f.formatoMoneda(totalOferta) %></td>
+                    <td class="num"><%= f.formatoDiferencia(diferencia) %></td>
+                    <td>
+                        <div class="acciones">
+                            <form action="/ventas/<%= l.id_lte %>/despublicar" method="POST" data-confirmar="¿Retirar del catálogo el lote <%= f.folio(l.id_lte) %>? El lote no se borra y podrás publicarlo de nuevo.">
+                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                <button type="submit" class="btn-icono peligro" title="Retirar del catálogo" aria-label="Retirar del catálogo el lote <%= f.folio(l.id_lte) %>"><i class="icon-eye-off" aria-hidden="true"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="franja"><i class="icon-package" aria-hidden="true"></i>Lotes disponibles sin publicar</div>
+    <div class="tabla-contenedor">
+        <table class="tabla">
+            <thead><tr><th>Lote</th><th>Fecha</th><th>Especies</th><th class="num">Kilogramos</th><th class="num">Cajas</th><th class="num">Precio de salida (kg)</th><th class="num">Valor de salida</th><th class="text-center">Acciones</th></tr></thead>
+            <tbody>
+            <% if (!pendientes.length) { %><tr class="vacio"><td colspan="8">No hay lotes pendientes de publicar.</td></tr><% } %>
+            <% pendientes.forEach(({ lote: l, valorSalida }) => { %>
+                <tr>
+                    <td><a href="/lotes/<%= l.id_lte %>" class="chip-folio"><%= f.folio(l.id_lte) %></a></td>
+                    <td><%= f.formatoFecha(l.fecha) %></td>
+                    <td><%= l.especies.map((e) => e.nombre).join(', ') %></td>
+                    <td class="num"><%= f.formatoKg(l.kilos) %></td>
+                    <td class="num"><%= l.numero_cajas %></td>
+                    <td class="num"><%= f.formatoMoneda(l.precio_kilo_salida) %></td>
+                    <td class="num"><%= f.formatoMoneda(valorSalida) %></td>
+                    <td><div class="acciones"><a href="/ventas/nueva?id_lte=<%= l.id_lte %>" class="btn btn-turquesa btn-sm"><i class="icon-tag" aria-hidden="true"></i>Poner a la venta</a></div></td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <p class="small texto-sec mt-3 mb-0">La diferencia estimada (total de oferta − valor de salida) es una estimación comercial; no equivale a utilidad neta porque no incluye costos adicionales.</p>
+</section>
+
+<%- include('../partials/finLayout') %>
+<%- include('../partials/footer') %>

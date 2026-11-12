@@ -37,11 +37,11 @@
                             <td class="num"><%= f.formatoNumero(l.kilos) %></td>
                             <td class="num"><%= l.numero_cajas %></td>
                             <td class="num"><%= f.formatoMoneda(l.precio_kilo_salida) %></td>
-                            <td><%- include('../partials/estado', { estado: l.estado }) %></td>
+                            <td><%- include('../partials/estado', { estado: l.estado }) %><% if (l.estado === 'DISPONIBLE' && l.publicado) { %> <span class="estado estado-activo"><i class="icon-store" aria-hidden="true"></i>A la venta</span><% } %></td>
                             <td>
                                 <div class="acciones">
                                     <a href="/lotes/<%= l.id_lte %>?desde=inventario" class="btn-icono" title="Ver lote <%= f.folio(l.id_lte) %>" aria-label="Ver lote <%= f.folio(l.id_lte) %>"><i class="icon-search" aria-hidden="true"></i></a>
-                                    <% if (esAdmin && l.estado === 'DISPONIBLE') { %>
+                                    <% if (esAdmin && l.estado === 'DISPONIBLE' && !l.publicado) { %>
                                         <a href="/lotes/<%= l.id_lte %>/editar" class="btn-icono" title="Editar lote" aria-label="Editar lote <%= f.folio(l.id_lte) %>"><i class="icon-pencil" aria-hidden="true"></i></a>
                                     <% } %>
                                 </div>

@@ -8,7 +8,6 @@
 
 <form class="tarjeta" method="POST" action="<%= comprador ? `/compradores/${comprador.codigo_cpr}/editar` : '/compradores' %>" novalidate>
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-    <% if (volver) { %><input type="hidden" name="volver" value="<%= volver %>"><% } %>
     <div class="tarjeta-titulo">
         <i class="icon-user-plus" aria-hidden="true"></i>
         <div><h2><%= comprador ? 'Editar comprador' : 'Nuevo comprador' %></h2><p><%= comprador ? 'Actualiza los datos de contacto. El código no cambia.' : 'Registra los datos de un comprador en el sistema.' %></p></div>
@@ -52,7 +51,7 @@
     <div class="pie-formulario">
         <span class="small"><span class="req">*</span> Campos obligatorios</span>
         <div class="botones">
-            <a href="<%= volver ? '/compras/nueva' : (comprador ? `/compradores/${comprador.codigo_cpr}` : '/compradores') %>" class="btn btn-blanco"><i class="icon-x" aria-hidden="true"></i>Cancelar</a>
+            <a href="<%= comprador ? `/compradores/${comprador.codigo_cpr}` : '/compradores' %>" class="btn btn-blanco"><i class="icon-x" aria-hidden="true"></i>Cancelar</a>
             <button type="submit" class="btn btn-turquesa"><i class="icon-save" aria-hidden="true"></i>Guardar comprador</button>
         </div>
     </div>

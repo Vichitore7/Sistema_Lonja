@@ -20,9 +20,13 @@
         <div class="d-flex gap-2 flex-wrap">
             <a href="<%= desde === 'inventario' ? '/inventario' : '/lotes' %>" class="btn btn-blanco"><i class="icon-arrow-left" aria-hidden="true"></i>Volver</a>
             <% if (lote.estado === 'DISPONIBLE') { %>
-                <a href="/compras/nueva?id_lte=<%= lote.id_lte %>" class="btn btn-turquesa"><i class="icon-shopping-cart" aria-hidden="true"></i>Registrar compra</a>
                 <% if (esAdmin) { %>
-                    <a href="/lotes/<%= lote.id_lte %>/editar" class="btn btn-blanco"><i class="icon-pencil" aria-hidden="true"></i>Editar</a>
+                    <% if (!lote.publicado) { %>
+                        <a href="/ventas/nueva?id_lte=<%= lote.id_lte %>" class="btn btn-turquesa"><i class="icon-tag" aria-hidden="true"></i>Poner a la venta</a>
+                        <a href="/lotes/<%= lote.id_lte %>/editar" class="btn btn-blanco"><i class="icon-pencil" aria-hidden="true"></i>Editar</a>
+                    <% } else { %>
+                        <a href="/ventas/administrar?id_lte=<%= lote.id_lte %>" class="btn btn-blanco"><i class="icon-store" aria-hidden="true"></i>Gestión de ventas</a>
+                    <% } %>
                     <form action="/lotes/<%= lote.id_lte %>/retirar" method="POST" data-confirmar="¿Retirar el lote <%= f.folio(lote.id_lte) %>? Ya no podrá venderse.">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <button type="submit" class="btn btn-blanco text-danger"><i class="icon-ban" aria-hidden="true"></i>Retirar</button>
@@ -38,6 +42,14 @@
         <div class="col-6 col-lg-3"><div class="dato"><i class="icon-package" aria-hidden="true"></i><div><small>Cajas</small><strong><%= lote.numero_cajas %></strong></div></div></div>
         <div class="col-6 col-lg-3"><div class="dato"><i class="icon-dollar-sign" aria-hidden="true"></i><div><small>Precio de salida</small><strong><%= f.formatoMoneda(lote.precio_kilo_salida) %> / kg</strong></div></div></div>
         <div class="col-6 col-lg-3"><div class="dato"><i class="icon-calendar" aria-hidden="true"></i><div><small>Fecha de registro</small><strong><%= f.formatoFecha(lote.fecha) %></strong></div></div></div>
+    </div>
+
+    <div class="franja"><i class="icon-store" aria-hidden="true"></i>Publicación y precios</div>
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-lg-3"><div class="dato"><i class="icon-<%= lote.publicado ? 'circle-check' : 'eye-off' %>" aria-hidden="true"></i><div><small>Publicación</small><strong><%= lote.estado === 'DISPONIBLE' ? (lote.publicado ? 'A la venta' : 'Sin publicar') : (lote.estado === 'VENDIDO' ? 'Vendido' : 'Fuera de catálogo') %></strong></div></div></div>
+        <div class="col-6 col-lg-3"><div class="dato"><i class="icon-tag" aria-hidden="true"></i><div><small>Precio final</small><strong><%= lote.precio_kilo_final === null ? '—' : `${f.formatoMoneda(lote.precio_kilo_final)} / kg` %></strong></div></div></div>
+        <div class="col-6 col-lg-3"><div class="dato"><i class="icon-coins" aria-hidden="true"></i><div><small>Valor de salida / total de oferta</small><strong><%= f.formatoMoneda(oferta.valorSalida) %> / <%= oferta.totalOferta === null ? '—' : f.formatoMoneda(oferta.totalOferta) %></strong></div></div></div>
+        <div class="col-6 col-lg-3"><div class="dato"><i class="icon-chart-column" aria-hidden="true"></i><div><small>Diferencia estimada</small><strong><%= oferta.diferencia === null ? '—' : f.formatoDiferencia(oferta.diferencia) %></strong></div></div></div>
     </div>
 
     <div class="franja"><i class="icon-fish" aria-hidden="true"></i>Especies del lote</div>

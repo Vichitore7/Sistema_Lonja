@@ -1,4 +1,4 @@
-// Dibuja el PDF del reporte diario con PDFKit (colores del manual de identidad)
+// Dibuja el PDF del reporte (un día o un rango de fechas) con PDFKit (colores del manual de identidad)
 import PDFDocument from 'pdfkit';
 import { formatoMoneda, formatoKg, formatoFechaHora, isoATexto, folio, nombreCompleto } from './formatos.js';
 
@@ -15,8 +15,10 @@ const COLUMNAS = [
     { titulo: 'Fecha y hora', ancho: 112, alinear: 'right', valor: (c) => formatoFechaHora(c.fecha) }
 ];
 
-export const generarPdfDiario = ({ fecha, totales, compras }, salida) => {
-    const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 40, info: { Title: `Reporte diario ${fecha}`, Author: 'Lonja Veracruz' } });
+export const generarPdfReporte = ({ desde, hasta, totales, compras }, salida) => {
+    const unDia = desde === hasta;
+    const titulo = 'Reporte de compras por fechas';
+    const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 40, info: { Title: unDia ? `Reporte diario ${desde}` : `Reporte ${desde} al ${hasta}`, Author: 'Lonja Veracruz' } });
     doc.pipe(salida);
     const izquierda = 40;
     const anchoUtil = doc.page.width - 80;
@@ -28,15 +30,16 @@ export const generarPdfDiario = ({ fecha, totales, compras }, salida) => {
     doc.font('Helvetica').fontSize(10).text('Sistema de gestión comercial', izquierda, 42);
     doc.fontSize(9).text(`Generado: ${formatoFechaHora(new Date())}`, izquierda, 28, { width: anchoUtil, align: 'right' });
 
-    doc.fillColor(C.navy).font('Helvetica-Bold').fontSize(16).text('Reporte diario de compras', izquierda, 92);
-    doc.fillColor(C.secundario).font('Helvetica').fontSize(10).text(`Fecha consultada: ${isoATexto(fecha)}`, izquierda, 114);
+    doc.fillColor(C.navy).font('Helvetica-Bold').fontSize(16).text(titulo, izquierda, 92);
+    doc.fillColor(C.secundario).font('Helvetica').fontSize(10)
+        .text(unDia ? `Fecha: ${isoATexto(desde)} (día completo)` : `Del ${isoATexto(desde)} al ${isoATexto(hasta)} (fechas inclusive)`, izquierda, 114);
 
     // Tarjetas de totales
     const tarjetas = [
         ['Número de compras', String(totales.compras)],
         ['Lotes vendidos', String(totales.lotes)],
         ['Kilos vendidos', formatoKg(totales.kilos)],
-        ['Importe total', formatoMoneda(totales.importe)]
+        ['Ingresos', formatoMoneda(totales.importe)]
     ];
     const anchoTarjeta = (anchoUtil - 30) / 4;
     tarjetas.forEach(([etiqueta, valor], i) => {
@@ -62,7 +65,7 @@ export const generarPdfDiario = ({ fecha, totales, compras }, salida) => {
 
     if (compras.length === 0) {
         doc.fillColor(C.secundario).font('Helvetica').fontSize(11)
-            .text('No se registraron compras en esta fecha. Los totales se muestran en cero.', izquierda, y + 16, { width: anchoUtil, align: 'center' });
+            .text(`No se registraron compras ${unDia ? 'en esta fecha' : 'en este periodo'}. Los totales se muestran en cero.`, izquierda, y + 16, { width: anchoUtil, align: 'center' });
     }
 
     compras.forEach((compra, i) => {

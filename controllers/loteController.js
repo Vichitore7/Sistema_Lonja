@@ -1,6 +1,7 @@
 import { db, Lote, Especie, Tipo } from '../models/index.js';
 import { obtenerErrores } from '../middleware/validar.js';
 import { consultarLotes, leerFiltros, opcionesFiltros, buscarLoteCompleto } from '../services/loteService.js';
+import { calcularOferta } from '../services/publicacionService.js';
 import { validarImagen, guardarImagen, borrarImagen } from '../helpers/imagenes.js';
 import { paginar, datosPaginacion, entero, texto } from '../helpers/utilidades.js';
 import { hoyISO, fechaISO, esFechaISO } from '../helpers/formatos.js';
@@ -108,7 +109,10 @@ const crear = async (req, res) => {
                 numero_cajas: datos.numero_cajas,
                 precio_kilo_salida: datos.precio_kilo_salida,
                 fecha: convertirFecha(datos.fecha),
-                estado: 'DISPONIBLE'
+                // Un lote nuevo inicia DISPONIBLE y sin publicar: el precio final se fija al ponerlo a la venta
+                estado: 'DISPONIBLE',
+                publicado: false,
+                precio_kilo_final: null
             }, { transaction: t });
             await Especie.bulkCreate(
                 especies.map((e) => ({ nombre: e.nombre, id_tpo: e.id_tpo, imagen: e.imagen, id_lte: lote.id_lte })),
@@ -128,10 +132,12 @@ const detalle = async (req, res, next) => {
     const lote = id && await buscarLoteCompleto(id);
     if (!lote) return next();
     const desde = req.query.desde === 'inventario' || req.usuario.rol !== 'ADMINISTRADOR' ? 'inventario' : 'lotes';
-    res.render('lotes/detalle', { pagina: `Lote ${String(lote.id_lte).padStart(3, '0')}`, seccion: desde, lote, desde });
+    res.render('lotes/detalle', { pagina: `Lote ${String(lote.id_lte).padStart(3, '0')}`, seccion: desde, lote, desde, oferta: calcularOferta(lote) });
 };
 
-// Busca un lote DISPONIBLE para editar o retirar
+// Busca un lote que se pueda editar: DISPONIBLE y sin publicar.
+// Un lote a la venta no cambia de kilos ni de precios: primero se retira del catálogo
+// (Gestión de ventas) y después se vuelve a publicar. Un lote vendido nunca se edita.
 const loteEditable = async (req, res, next) => {
     const id = entero(req.params.id);
     const lote = id && await Lote.findByPk(id, {
@@ -140,6 +146,7 @@ const loteEditable = async (req, res, next) => {
     });
     if (!lote) { next(); return null; }
     if (lote.estado !== 'DISPONIBLE') { res.redirect(`/lotes/${lote.id_lte}?error=lote-no-disponible`); return null; }
+    if (lote.publicado) { res.redirect(`/lotes/${lote.id_lte}?error=lote-publicado`); return null; }
     return lote;
 };
 
@@ -187,6 +194,7 @@ const editar = async (req, res, next) => {
             // Se vuelve a comprobar el estado dentro de la transacción
             const bloqueado = await Lote.findByPk(lote.id_lte, { transaction: t, lock: t.LOCK.UPDATE });
             if (bloqueado.estado !== 'DISPONIBLE') throw new Error('LOTE_NO_DISPONIBLE');
+            if (bloqueado.publicado) throw new Error('LOTE_PUBLICADO');
 
             await bloqueado.update({
                 kilos: datos.kilos,
@@ -210,6 +218,7 @@ const editar = async (req, res, next) => {
     } catch (error) {
         await Promise.all(nuevasImagenes.map(borrarImagen));
         if (error.message === 'LOTE_NO_DISPONIBLE') return res.redirect(`/lotes/${lote.id_lte}?error=lote-no-disponible`);
+        if (error.message === 'LOTE_PUBLICADO') return res.redirect(`/lotes/${lote.id_lte}?error=lote-publicado`);
         throw error;
     }
 
@@ -221,11 +230,12 @@ const editar = async (req, res, next) => {
     return res.redirect(`/lotes/${lote.id_lte}?msg=lote-editado`);
 };
 
-// POST /lotes/:id/retirar  (no se elimina: pasa a RETIRADO)
+// POST /lotes/:id/retirar  (no se elimina: pasa a RETIRADO y sale del catálogo;
+// si estuvo publicado conserva su precio_kilo_final como dato histórico)
 const retirar = async (req, res, next) => {
     const id = entero(req.params.id);
     if (!id) return next();
-    const [actualizados] = await Lote.update({ estado: 'RETIRADO' }, { where: { id_lte: id, estado: 'DISPONIBLE' } });
+    const [actualizados] = await Lote.update({ estado: 'RETIRADO', publicado: false }, { where: { id_lte: id, estado: 'DISPONIBLE' } });
     if (!actualizados) {
         return (await Lote.findByPk(id)) ? res.redirect(`/lotes/${id}?error=lote-no-disponible`) : next();
     }

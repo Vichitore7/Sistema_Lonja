@@ -4,6 +4,10 @@
 <%- include('../partials/encabezado', { titulo: 'Compradores', migas: [{ texto: 'Compradores', url: '/compradores' }, { texto: `Comprador ${f.folio(comprador.codigo_cpr)}` }] }) %>
 <%- include('../partials/alerts') %>
 
+<% const esAdmin = usuario.rol === 'ADMINISTRADOR'; const cuenta = comprador.cuenta;
+   const ec = erroresCuenta || {}; const ep = erroresPassword || {}; %>
+<% if (erroresCuenta || erroresPassword) { %><div class="alert alert-danger" role="alert"><i class="icon-circle-alert" aria-hidden="true"></i><div>No se guardaron los cambios de la cuenta: revisa los campos.</div></div><% } %>
+
 <section class="tarjeta">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
         <div class="tarjeta-titulo">
@@ -13,7 +17,6 @@
         <div class="d-flex gap-2 flex-wrap">
             <a href="/compradores" class="btn btn-blanco"><i class="icon-arrow-left" aria-hidden="true"></i>Volver</a>
             <a href="/compradores/<%= comprador.codigo_cpr %>/editar" class="btn btn-blanco"><i class="icon-pencil" aria-hidden="true"></i>Editar</a>
-            <a href="/compras/nueva?codigo_cpr=<%= comprador.codigo_cpr %>" class="btn btn-turquesa"><i class="icon-shopping-cart" aria-hidden="true"></i>Registrar compra</a>
         </div>
     </div>
 
@@ -24,6 +27,69 @@
         <dt>Dirección:</dt><dd><%= comprador.direccion %></dd>
         <dt>Correo:</dt><dd><%= comprador.correo || '—' %></dd>
     </dl>
+
+    <div class="franja"><i class="icon-shield-user" aria-hidden="true"></i>Cuenta del comprador</div>
+    <% if (!cuenta) { %>
+        <p class="texto-sec mb-3">Este comprador no tiene cuenta para iniciar sesión.<% if (!esAdmin) { %> Solo el administrador puede crearla.<% } %></p>
+        <% if (esAdmin) { %>
+        <form method="POST" action="/compradores/<%= comprador.codigo_cpr %>/cuenta" class="mb-4" novalidate>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="row g-3 align-items-start">
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="c-nombre_usuario">Nombre de usuario <span class="req">*</span></label>
+                    <input type="text" id="c-nombre_usuario" name="nombre_usuario" class="form-control <%= ec.nombre_usuario ? 'is-invalid' : '' %>" maxlength="50" autocomplete="off" value="<%= datosCuenta.nombre_usuario %>" required>
+                    <%- include('../partials/campoError', { campo: 'nombre_usuario', errores: ec }) %>
+                </div>
+                <% [['password', 'Contraseña'], ['confirmar', 'Confirmar contraseña']].forEach(([campo, etiqueta]) => { %>
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="c-<%= campo %>"><%= etiqueta %> <span class="req">*</span></label>
+                    <input type="password" id="c-<%= campo %>" name="<%= campo %>" class="form-control <%= ec[campo] ? 'is-invalid' : '' %>" minlength="8" maxlength="72" autocomplete="new-password" required>
+                    <%- include('../partials/campoError', { campo, errores: ec }) %>
+                </div>
+                <% }) %>
+                <div class="col-12 col-md-2 pt-md-4"><button type="submit" class="btn btn-turquesa w-100 mt-md-2"><i class="icon-user-plus" aria-hidden="true"></i>Crear cuenta</button></div>
+            </div>
+        </form>
+        <% } %>
+    <% } else { %>
+        <dl class="lista-datos mb-3">
+            <dt>Usuario:</dt><dd><%= cuenta.nombre_usuario %></dd>
+            <dt>Estado:</dt><dd><span class="estado estado-<%= cuenta.activo ? 'activo' : 'inactivo' %>"><i class="icon-<%= cuenta.activo ? 'circle-check' : 'ban' %>" aria-hidden="true"></i><%= cuenta.activo ? 'Activa' : 'Inactiva' %></span></dd>
+        </dl>
+        <% if (esAdmin) { %>
+        <div class="row g-4 mb-4">
+            <form class="col-12 col-lg-4" method="POST" action="/compradores/<%= comprador.codigo_cpr %>/cuenta/editar" novalidate>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <label class="form-label" for="c-nombre_usuario">Nombre de usuario</label>
+                <div class="input-group">
+                    <input type="text" id="c-nombre_usuario" name="nombre_usuario" class="form-control <%= ec.nombre_usuario ? 'is-invalid' : '' %>" maxlength="50" autocomplete="off" value="<%= datosCuenta.nombre_usuario %>" required>
+                    <button type="submit" class="btn btn-navy"><i class="icon-save" aria-hidden="true"></i>Guardar</button>
+                </div>
+                <%- include('../partials/campoError', { campo: 'nombre_usuario', errores: ec }) %>
+            </form>
+            <form class="col-12 col-lg-6" method="POST" action="/compradores/<%= comprador.codigo_cpr %>/cuenta/password" novalidate>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="row g-2 align-items-start">
+                    <% [['password', 'Nueva contraseña'], ['confirmar', 'Confirmar']].forEach(([campo, etiqueta]) => { %>
+                    <div class="col-12 col-sm-5">
+                        <label class="form-label" for="p-<%= campo %>"><%= etiqueta %></label>
+                        <input type="password" id="p-<%= campo %>" name="<%= campo %>" class="form-control <%= ep[campo] ? 'is-invalid' : '' %>" minlength="8" maxlength="72" autocomplete="new-password" required>
+                        <%- include('../partials/campoError', { campo, errores: ep }) %>
+                    </div>
+                    <% }) %>
+                    <div class="col-12 col-sm-2 pt-sm-4"><button type="submit" class="btn btn-navy w-100 mt-sm-2" title="Restablecer contraseña" aria-label="Restablecer contraseña"><i class="icon-key-round" aria-hidden="true"></i></button></div>
+                </div>
+            </form>
+            <form class="col-12 col-lg-2 pt-lg-4" method="POST" action="/compradores/<%= comprador.codigo_cpr %>/cuenta/estado"
+                  data-confirmar="<%= cuenta.activo ? `¿Desactivar la cuenta ${cuenta.nombre_usuario}? Ya no podrá iniciar sesión ni comprar.` : `¿Activar la cuenta ${cuenta.nombre_usuario}?` %>">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn <%= cuenta.activo ? 'btn-blanco' : 'btn-turquesa' %> w-100 mt-lg-2">
+                    <i class="icon-<%= cuenta.activo ? 'toggle-right' : 'toggle-left' %>" aria-hidden="true"></i><%= cuenta.activo ? 'Desactivar' : 'Activar' %>
+                </button>
+            </form>
+        </div>
+        <% } %>
+    <% } %>
 
     <div class="franja"><i class="icon-shopping-cart" aria-hidden="true"></i>Compras del comprador</div>
     <div class="tabla-contenedor">

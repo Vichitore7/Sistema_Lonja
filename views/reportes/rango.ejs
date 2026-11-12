@@ -1,18 +1,23 @@
 <%- include('../partials/head') %>
 <%- include('../partials/inicioLayout') %>
 
-<%- include('../partials/encabezado', { titulo: 'Reportes', migas: [{ texto: 'Reportes', url: '/reportes' }, { texto: 'Reportes diarios', url: '/reportes' }, { texto: 'Detalle del reporte' }] }) %>
+<% const unDia = desde === hasta;
+   const pdfUrl = `/reportes/pdf?desde=${desde}&hasta=${hasta}`; %>
+<%- include('../partials/encabezado', { titulo: 'Reportes', migas: [{ texto: 'Reportes', url: '/reportes' }, { texto: 'Detalle del reporte' }] }) %>
 <%- include('../partials/alerts') %>
 
 <section class="tarjeta">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
         <div class="tarjeta-titulo">
             <i class="icon-chart-column" aria-hidden="true"></i>
-            <div><h2>Detalle del reporte diario</h2><p>Resumen de las compras registradas el <%= f.isoATexto(fecha) %>.</p></div>
+            <div>
+                <h2>Reporte por fechas</h2>
+                <p><%= unDia ? `Resumen de las compras registradas el ${f.isoATexto(desde)}.` : `Resumen de las compras del ${f.isoATexto(desde)} al ${f.isoATexto(hasta)}.` %></p>
+            </div>
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <!-- Única exportación aprobada: PDF -->
-            <a href="/reportes/diario/pdf?fecha=<%= fecha %>" class="btn btn-turquesa"><i class="icon-file-down" aria-hidden="true"></i>Exportar PDF</a>
+            <a href="<%= pdfUrl %>" class="btn btn-turquesa"><i class="icon-file-down" aria-hidden="true"></i>Exportar PDF</a>
             <a href="/reportes" class="btn btn-blanco"><i class="icon-arrow-left" aria-hidden="true"></i>Volver</a>
         </div>
     </div>
@@ -21,15 +26,15 @@
         <div class="col-6 col-lg-3"><div class="indicador chico"><i class="icon-shopping-cart" aria-hidden="true"></i><div><div class="etiqueta">N.º de compras</div><div class="valor"><%= totales.compras %></div></div></div></div>
         <div class="col-6 col-lg-3"><div class="indicador chico"><i class="icon-weight" aria-hidden="true"></i><div><div class="etiqueta">Kilogramos vendidos</div><div class="valor"><%= f.formatoKg(totales.kilos) %></div></div></div></div>
         <div class="col-6 col-lg-3"><div class="indicador chico"><i class="icon-layers" aria-hidden="true"></i><div><div class="etiqueta">Lotes vendidos</div><div class="valor"><%= totales.lotes %></div></div></div></div>
-        <div class="col-6 col-lg-3"><div class="indicador chico destacado"><i class="icon-dollar-sign" aria-hidden="true"></i><div><div class="etiqueta">Importe total</div><div class="valor"><%= f.formatoMoneda(totales.importe) %></div></div></div></div>
+        <div class="col-6 col-lg-3"><div class="indicador chico destacado"><i class="icon-dollar-sign" aria-hidden="true"></i><div><div class="etiqueta">Ingresos</div><div class="valor"><%= f.formatoMoneda(totales.importe) %></div></div></div></div>
     </div>
 
-    <div class="franja"><i class="icon-shopping-cart" aria-hidden="true"></i>Compras del día</div>
+    <div class="franja"><i class="icon-shopping-cart" aria-hidden="true"></i><%= unDia ? 'Compras del día' : 'Compras del periodo' %></div>
     <div class="tabla-contenedor">
         <table class="tabla">
-            <thead><tr><th>N.º compra</th><th>Código comprador</th><th>Comprador</th><th>Lote</th><th class="num">Kilogramos</th><th class="num">Precio final (kg)</th><th class="num">Importe total</th><th>Hora</th></tr></thead>
+            <thead><tr><th>N.º compra</th><th>Código comprador</th><th>Comprador</th><th>Lote</th><th class="num">Kilogramos</th><th class="num">Precio final (kg)</th><th class="num">Importe total</th><th><%= unDia ? 'Hora' : 'Fecha y hora' %></th></tr></thead>
             <tbody>
-            <% if (!compras.length) { %><tr class="vacio"><td colspan="8">No se registraron compras en esta fecha.</td></tr><% } %>
+            <% if (!compras.length) { %><tr class="vacio"><td colspan="8">No se registraron compras <%= unDia ? 'en esta fecha' : 'en este periodo' %>.</td></tr><% } %>
             <% compras.forEach((c) => { %>
                 <tr>
                     <td><a href="/compras/<%= c.id_cmp %>"><%= f.folio(c.id_cmp) %></a></td>
@@ -39,7 +44,7 @@
                     <td class="num"><%= f.formatoKg(c.lote.kilos) %></td>
                     <td class="num"><%= f.formatoMoneda(c.precio_kilo_final) %></td>
                     <td class="num fw-bold"><%= f.formatoMoneda(c.precio_total) %></td>
-                    <td><%= f.formatoFechaHora(c.fecha).split(' ').pop() %></td>
+                    <td><%= unDia ? f.formatoFechaHora(c.fecha).split(' ').pop() : f.formatoFechaHora(c.fecha) %></td>
                 </tr>
             <% }) %>
             </tbody>

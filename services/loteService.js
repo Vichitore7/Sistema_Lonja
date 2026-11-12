@@ -11,7 +11,9 @@ export const leerFiltros = (query) => ({
     especie: texto(query.especie).slice(0, 100),
     id_tpo: entero(query.id_tpo) ? String(entero(query.id_tpo)) : '',
     kg_min: /^\d+(\.\d{1,2})?$/.test(query.kg_min || '') ? query.kg_min : '',
-    kg_max: /^\d+(\.\d{1,2})?$/.test(query.kg_max || '') ? query.kg_max : ''
+    kg_max: /^\d+(\.\d{1,2})?$/.test(query.kg_max || '') ? query.kg_max : '',
+    // 'si' = a la venta, 'no' = sin publicar
+    publicado: ['si', 'no'].includes(query.publicado) ? query.publicado : ''
 });
 
 const idsLotesConEspecie = async (whereEspecie) => {
@@ -23,6 +25,7 @@ export const consultarLotes = async (filtros, { limit, offset }) => {
     const condiciones = [];
 
     if (filtros.estado) condiciones.push({ estado: filtros.estado });
+    if (filtros.publicado) condiciones.push({ publicado: filtros.publicado === 'si' });
     if (filtros.kg_min) condiciones.push({ kilos: { [Op.gte]: filtros.kg_min } });
     if (filtros.kg_max) condiciones.push({ kilos: { [Op.lte]: filtros.kg_max } });
     if (filtros.especie) condiciones.push({ id_lte: await idsLotesConEspecie({ nombre: filtros.especie }) });
@@ -63,8 +66,9 @@ export const buscarLoteCompleto = (id_lte) => Lote.findByPk(id_lte, {
     order: [[{ model: Especie, as: 'especies' }, 'id_epe', 'ASC']]
 });
 
-export const lotesDisponibles = () => Lote.findAll({
-    where: { estado: 'DISPONIBLE' },
+// Lotes DISPONIBLES todavía sin publicar (los que el Administrador puede poner a la venta)
+export const lotesPorPublicar = () => Lote.findAll({
+    where: { estado: 'DISPONIBLE', publicado: false },
     include: [{ model: Especie, as: 'especies', include: [{ model: Tipo, as: 'tipo' }] }],
     order: [['id_lte', 'ASC'], [{ model: Especie, as: 'especies' }, 'id_epe', 'ASC']]
 });

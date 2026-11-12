@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { Usuario } from '../models/index.js';
+import { Usuario, Comprador } from '../models/index.js';
 import { obtenerErrores } from '../middleware/validar.js';
 import { paginar, datosPaginacion, entero, texto } from '../helpers/utilidades.js';
 
@@ -22,8 +22,18 @@ const listar = async (req, res) => {
 
     const { pagina, limit, offset } = paginar(req.query);
     const { rows, count } = await Usuario.findAndCountAll({ where, order: [['id_usuario', 'ASC']], limit, offset });
+
+    // Sección Compradores: cuentas COMPRADOR, con búsqueda por código de comprador
+    const codigo = texto(req.query.codigo).slice(0, 9);
+    const whereCompradores = { rol: 'COMPRADOR' };
+    if (codigo) whereCompradores.codigo_cpr = entero(codigo) || 0;
+    const cuentasCompradores = await Usuario.findAll({
+        where: whereCompradores, include: [{ model: Comprador, as: 'comprador' }],
+        order: [['codigo_cpr', 'ASC']], limit: codigo ? 1 : 50
+    });
+
     res.render('usuarios/index', {
-        pagina: 'Usuarios', seccion: 'usuarios', usuarios: rows, filtros,
+        pagina: 'Gestión de cuentas', seccion: 'usuarios', usuarios: rows, filtros, codigo, cuentasCompradores,
         paginacion: datosPaginacion(count, pagina, req.query)
     });
 };

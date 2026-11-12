@@ -1,0 +1,85 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+<% const e = errores || {}; %>
+
+<%- include('../partials/encabezado', { titulo: 'Gestión de ventas', migas: [{ texto: 'Gestión de ventas', url: '/ventas/administrar' }, { texto: 'Nueva venta' }] }) %>
+<%- include('../partials/alerts') %>
+
+<section class="tarjeta">
+    <div class="tarjeta-titulo">
+        <i class="icon-tag" aria-hidden="true"></i>
+        <div><h2>Nueva venta</h2><p>Selecciona un lote disponible y define el precio final por kilogramo. Publicar no registra ninguna compra.</p></div>
+    </div>
+
+    <!-- 1. Selección del lote (al elegirlo se recarga la página con sus datos) -->
+    <div class="franja"><i class="icon-layers" aria-hidden="true"></i>Lote</div>
+    <form class="row g-3 align-items-end mb-3" method="GET" action="/ventas/nueva">
+        <div class="col-12 col-lg-6">
+            <label class="form-label" for="sel_lote">Lote disponible sin publicar <span class="req">*</span></label>
+            <select id="sel_lote" name="id_lte" class="form-select <%= e.id_lte ? 'is-invalid' : '' %>" data-enviar-al-cambiar required>
+                <option value="">Selecciona un lote</option>
+                <% lotes.forEach((l) => { %>
+                    <option value="<%= l.id_lte %>" <%= lote && l.id_lte === lote.id_lte ? 'selected' : '' %>><%= f.folio(l.id_lte) %> – <%= l.especies.map((es) => es.nombre).join(', ') %> – <%= f.formatoKg(l.kilos) %></option>
+                <% }) %>
+            </select>
+            <%- include('../partials/campoError', { campo: 'id_lte', errores: e }) %>
+            <% if (!lotes.length) { %><div class="form-text">No hay lotes disponibles pendientes de publicar.</div><% } %>
+        </div>
+        <div class="col-auto"><button type="submit" class="btn btn-blanco"><i class="icon-search" aria-hidden="true"></i>Consultar lote</button></div>
+    </form>
+
+    <% if (lote) { %>
+    <!-- 2. Datos del lote en solo lectura -->
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-lg-3"><div class="dato"><i class="icon-weight" aria-hidden="true"></i><div><small>Kilogramos</small><strong><%= f.formatoKg(lote.kilos) %></strong></div></div></div>
+        <div class="col-6 col-lg-3"><div class="dato"><i class="icon-package" aria-hidden="true"></i><div><small>Cajas</small><strong><%= lote.numero_cajas %></strong></div></div></div>
+        <div class="col-6 col-lg-3"><div class="dato"><i class="icon-calendar" aria-hidden="true"></i><div><small>Fecha del lote</small><strong><%= f.formatoFecha(lote.fecha) %></strong></div></div></div>
+        <div class="col-6 col-lg-3"><div class="dato"><i class="icon-dollar-sign" aria-hidden="true"></i><div><small>Precio de salida</small><strong><%= f.formatoMoneda(lote.precio_kilo_salida) %> / kg</strong></div></div></div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-6">
+            <div class="franja"><i class="icon-fish" aria-hidden="true"></i>Especies del lote</div>
+            <table class="tabla">
+                <thead><tr><th>Tipo</th><th>Especie</th></tr></thead>
+                <tbody><% lote.especies.forEach((es) => { %><tr><td><%= es.tipo?.nombre %></td><td><%= es.nombre %></td></tr><% }) %></tbody>
+            </table>
+        </div>
+
+        <!-- 3. Precio final y cálculo -->
+        <form class="col-12 col-lg-6" id="formPublicar" method="POST" action="/ventas/publicar" novalidate
+              data-kilos="<%= Number(lote.kilos) %>" data-salida="<%= Number(lote.precio_kilo_salida) %>"
+              data-confirmar="¿Poner a la venta el lote <%= f.folio(lote.id_lte) %>? Aparecerá en el catálogo de los compradores.">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="id_lte" value="<%= lote.id_lte %>">
+            <div class="franja"><i class="icon-tag" aria-hidden="true"></i>Precio de venta</div>
+            <label class="form-label" for="precio_kilo_final">Precio final por kg <span class="req">*</span></label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="icon-dollar-sign" aria-hidden="true"></i></span>
+                <input type="number" id="precio_kilo_final" name="precio_kilo_final" class="form-control <%= e.precio_kilo_final ? 'is-invalid' : '' %>"
+                       placeholder="Ej. 120.00" min="0.01" step="0.01" value="<%= datos.precio_kilo_final %>" required autofocus>
+                <span class="input-group-text">/ kg</span>
+            </div>
+            <%- include('../partials/campoError', { campo: 'precio_kilo_final', errores: e }) %>
+
+            <dl class="lista-datos mt-3 mb-0">
+                <dt>Valor de salida:</dt><dd><%= f.formatoMoneda(oferta.valorSalida) %></dd>
+                <dt>Diferencia estimada:</dt><dd id="diferenciaEstimada"><%= oferta.diferencia === null ? '—' : f.formatoDiferencia(oferta.diferencia) %></dd>
+            </dl>
+            <div class="importe-total"><span>Precio total de la oferta</span><strong id="totalOferta"><%= oferta.totalOferta === null ? '$0.00' : f.formatoMoneda(oferta.totalOferta) %></strong></div>
+            <div class="form-text">Total = kilos × precio final. El servidor vuelve a calcularlo al guardar. La diferencia es una estimación, no utilidad neta.</div>
+
+            <div class="pie-formulario">
+                <span class="small"><span class="req">*</span> Campos obligatorios</span>
+                <div class="botones">
+                    <a href="/ventas/administrar" class="btn btn-blanco"><i class="icon-x" aria-hidden="true"></i>Cancelar</a>
+                    <button type="submit" class="btn btn-turquesa"><i class="icon-store" aria-hidden="true"></i>Poner a la venta</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <% } %>
+</section>
+
+<%- include('../partials/finLayout') %>
+<%- include('../partials/footer', { scripts: ['publicacion.js'] }) %>

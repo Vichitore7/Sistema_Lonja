@@ -1,19 +1,26 @@
 <%
   // Menú según rol. Especies NO aparece: se capturan dentro de "Nuevo lote".
   const esAdmin = usuario && usuario.rol === 'ADMINISTRADOR';
-  const menu = [
+  const esComprador = usuario && usuario.rol === 'COMPRADOR';
+  const inicioUrl = esComprador ? '/catalogo' : '/dashboard';
+  // Comprador: navegación propia. Empleado: solo consulta (inventario, historial y reportes).
+  const menu = esComprador ? [
+    { clave: 'catalogo', texto: 'Catálogo', icono: 'store', url: '/catalogo' },
+    { clave: 'mis-compras', texto: 'Mis compras', icono: 'shopping-bag', url: '/mis-compras' }
+  ] : [
     { clave: 'inicio', texto: 'Inicio', icono: 'house', url: '/dashboard' },
     { clave: 'inventario', texto: 'Inventario', icono: 'package', url: '/inventario' },
     { clave: 'lotes', texto: 'Lotes', icono: 'layers', url: '/lotes', admin: true },
     { clave: 'tipos', texto: 'Tipos', icono: 'tag', url: '/tipos', admin: true },
+    { clave: 'ventas', texto: 'Ventas', icono: 'store', url: '/ventas/administrar', admin: true },
     { clave: 'compras', texto: 'Compras', icono: 'shopping-cart', url: '/compras/historial' },
-    { clave: 'compradores', texto: 'Compradores', icono: 'users', url: '/compradores' },
+    { clave: 'compradores', texto: 'Compradores', icono: 'users', url: '/compradores', admin: true },
     { clave: 'reportes', texto: 'Reportes', icono: 'chart-column', url: '/reportes' }
   ].filter((item) => !item.admin || esAdmin);
   const actual = typeof seccion !== 'undefined' ? seccion : '';
 %>
 <aside class="sidebar" id="sidebar" aria-label="Menú principal">
-    <a href="/dashboard" class="marca">
+    <a href="<%= inicioUrl %>" class="marca">
         <img src="/img/logo.svg" alt="">
         <strong>Lonja<br>Veracruz</strong>
     </a>
@@ -28,7 +35,7 @@
         <% if (esAdmin) { %>
             <div class="separador"></div>
             <a href="/usuarios" class="nav-link <%= actual === 'usuarios' ? 'activo' : '' %>" <%- actual === 'usuarios' ? 'aria-current="page"' : '' %>>
-                <i class="icon-shield-user" aria-hidden="true"></i>Usuarios
+                <i class="icon-shield-user" aria-hidden="true"></i>Cuentas
             </a>
         <% } %>
     </nav>

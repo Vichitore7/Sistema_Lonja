@@ -1,0 +1,58 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+<% const c = compra, cp = compra.comprador, l = compra.lote; %>
+
+<%- include('../partials/encabezado', { titulo: 'Mis compras', migas: [{ texto: 'Mis compras', url: '/mis-compras' }, { texto: `Compra ${f.folio(c.id_cmp)}` }] }) %>
+<%- include('../partials/alerts') %>
+
+<section class="tarjeta">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div class="tarjeta-titulo">
+            <i class="icon-receipt" aria-hidden="true"></i>
+            <div><h2>Compra <%= f.folio(c.id_cmp) %></h2><p>Comprobante de tu compra en la Lonja de Veracruz.</p></div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="/mis-compras" class="btn btn-blanco"><i class="icon-arrow-left" aria-hidden="true"></i>Mis compras</a>
+            <a href="/catalogo" class="btn btn-turquesa"><i class="icon-store" aria-hidden="true"></i>Ver catálogo</a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-3">
+        <div class="col-12 col-lg-4">
+            <div class="franja"><i class="icon-receipt" aria-hidden="true"></i>Datos de la compra</div>
+            <dl class="lista-datos">
+                <dt>Folio:</dt><dd><%= f.folio(c.id_cmp) %></dd>
+                <dt>Fecha de compra:</dt><dd><%= f.formatoFechaHora(c.fecha) %></dd>
+            </dl>
+            <div class="importe-total"><span>Total:</span><strong><%= f.formatoMoneda(c.precio_total) %></strong></div>
+        </div>
+        <div class="col-12 col-lg-4">
+            <div class="franja"><i class="icon-user" aria-hidden="true"></i>Comprador</div>
+            <dl class="lista-datos">
+                <dt>Código:</dt><dd><%= f.folio(cp.codigo_cpr) %></dd>
+                <dt>Nombre:</dt><dd><%= f.nombreCompleto(cp) %></dd>
+                <dt>Dirección:</dt><dd><%= cp.direccion %></dd>
+                <dt>Correo:</dt><dd><%= cp.correo || '—' %></dd>
+            </dl>
+        </div>
+        <div class="col-12 col-lg-4">
+            <div class="franja"><i class="icon-layers" aria-hidden="true"></i>Lote</div>
+            <dl class="lista-datos">
+                <dt>Lote:</dt><dd><%= f.folio(l.id_lte) %></dd>
+                <dt>Kilogramos:</dt><dd><%= f.formatoKg(l.kilos) %></dd>
+                <dt>Cajas:</dt><dd><%= l.numero_cajas %></dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="franja"><i class="icon-fish" aria-hidden="true"></i>Especies del lote</div>
+    <table class="tabla">
+        <thead><tr><th>Tipo</th><th>Especie</th></tr></thead>
+        <tbody>
+        <% l.especies.forEach((es) => { %><tr><td><%= es.tipo?.nombre %></td><td><%= es.nombre %></td></tr><% }) %>
+        </tbody>
+    </table>
+</section>
+
+<%- include('../partials/finLayout') %>
+<%- include('../partials/footer') %>
