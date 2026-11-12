@@ -1,0 +1,45 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+<% const e = errores || {}; %>
+
+<%- include('../partials/encabezado', { titulo: 'Tipos', migas: [{ texto: 'Tipos', url: '/tipos' }, { texto: tipo ? 'Editar tipo' : 'Nuevo tipo' }] }) %>
+<%- include('../partials/alerts') %>
+
+<form class="tarjeta" method="POST" action="<%= tipo ? `/tipos/${tipo.id_tpo}/editar` : '/tipos' %>" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="tarjeta-titulo">
+        <i class="icon-tag" aria-hidden="true"></i>
+        <div><h2><%= tipo ? 'Editar tipo' : 'Nuevo tipo' %></h2><p><%= tipo ? 'Modifica el nombre del tipo de producto.' : 'Registra un nuevo tipo de producto.' %></p></div>
+    </div>
+
+    <div class="franja"><i class="icon-info" aria-hidden="true"></i>Información del tipo</div>
+    <div class="row g-3 mb-3">
+        <div class="col-12 col-md-4">
+            <label class="form-label" for="id_tpo">ID</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="icon-hash" aria-hidden="true"></i></span>
+                <input type="text" id="id_tpo" class="form-control" value="<%= tipo ? tipo.id_tpo : 'Se asignará automáticamente' %>" readonly>
+            </div>
+        </div>
+        <div class="col-12 col-md-8">
+            <label class="form-label" for="nombre">Tipo <span class="req">*</span></label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="icon-tag" aria-hidden="true"></i></span>
+                <input type="text" id="nombre" name="nombre" class="form-control <%= e.nombre ? 'is-invalid' : '' %>" placeholder="Nombre del tipo (Ej. Pescado)"
+                       maxlength="100" value="<%= datos.nombre || '' %>" required autofocus>
+            </div>
+            <%- include('../partials/campoError', { campo: 'nombre', errores: e }) %>
+        </div>
+    </div>
+
+    <div class="pie-formulario">
+        <span class="small"><span class="req">*</span> Campos obligatorios</span>
+        <div class="botones">
+            <a href="/tipos" class="btn btn-blanco"><i class="icon-x" aria-hidden="true"></i>Cancelar</a>
+            <button type="submit" class="btn btn-turquesa"><i class="icon-save" aria-hidden="true"></i>Guardar tipo</button>
+        </div>
+    </div>
+</form>
+
+<%- include('../partials/finLayout') %>
+<%- include('../partials/footer') %>

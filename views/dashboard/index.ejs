@@ -1,0 +1,64 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+
+<div class="encabezado">
+    <div>
+        <h1>Bienvenido(a), <%= usuario.nombre_usuario %></h1>
+        <p class="subtitulo">Panel de control del Sistema Lonja de Veracruz</p>
+        <div class="subrayado"></div>
+    </div>
+    <span class="fecha-chip"><i class="icon-calendar" aria-hidden="true"></i><%= fechaHoy %></span>
+</div>
+
+<%- include('../partials/alerts') %>
+
+<div class="row g-3 g-lg-4 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="indicador">
+            <i class="icon-package" aria-hidden="true"></i>
+            <div><div class="etiqueta">Lotes disponibles</div><div class="valor"><%= lotesDisponibles %></div></div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="indicador">
+            <i class="icon-shopping-cart" aria-hidden="true"></i>
+            <div><div class="etiqueta">Compras de hoy</div><div class="valor"><%= comprasHoy %></div></div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="indicador destacado">
+            <i class="icon-coins" aria-hidden="true"></i>
+            <div><div class="etiqueta">Ingresos del día</div><div class="valor"><%= f.formatoMoneda(ingresosHoy) %></div></div>
+        </div>
+    </div>
+</div>
+
+<section class="tarjeta">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h2 class="h4 m-0 d-flex align-items-center gap-2"><i class="icon-chart-column text-body" aria-hidden="true"></i>Últimas compras</h2>
+        <a href="/compras/historial" class="btn btn-blanco btn-sm">Ver historial <i class="icon-arrow-right" aria-hidden="true"></i></a>
+    </div>
+    <div class="tabla-contenedor">
+        <table class="tabla">
+            <thead><tr><th>Folio</th><th>Lote</th><th>Comprador</th><th class="num">Precio/kg</th><th class="num">Total</th><th>Fecha</th></tr></thead>
+            <tbody>
+            <% if (!ultimasCompras.length) { %>
+                <tr class="vacio"><td colspan="6">Todavía no hay compras registradas.</td></tr>
+            <% } %>
+            <% ultimasCompras.forEach((c) => { %>
+                <tr>
+                    <td><a href="/compras/<%= c.id_cmp %>">CMP-<%= f.folio(c.id_cmp, 4) %></a></td>
+                    <td><span class="chip-folio"><%= f.folio(c.id_lte) %></span></td>
+                    <td><%= f.nombreCompleto(c.comprador) %></td>
+                    <td class="num"><%= f.formatoMoneda(c.precio_kilo_final) %></td>
+                    <td class="num fw-bold"><%= f.formatoMoneda(c.precio_total) %></td>
+                    <td><%= f.formatoFecha(c.fecha) %></td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<%- include('../partials/finLayout') %>
+<%- include('../partials/footer') %>

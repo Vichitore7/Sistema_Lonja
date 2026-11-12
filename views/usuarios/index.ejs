@@ -1,0 +1,71 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+
+<%- include('../partials/encabezado', { titulo: 'Usuarios', migas: [{ texto: 'Usuarios', url: '/usuarios' }, { texto: 'Gestión de usuarios' }] }) %>
+<%- include('../partials/alerts') %>
+
+<section class="tarjeta">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div class="tarjeta-titulo">
+            <i class="icon-users" aria-hidden="true"></i>
+            <div><h2>Gestión de usuarios</h2><p>Administra las cuentas de empleados del sistema.</p></div>
+        </div>
+        <a href="/usuarios/nuevo" class="btn btn-turquesa"><i class="icon-user-plus" aria-hidden="true"></i>Nuevo usuario</a>
+    </div>
+    <div class="alert alert-info py-2"><i class="icon-info" aria-hidden="true"></i><div>Solo se pueden crear y administrar cuentas de empleados.</div></div>
+
+    <form class="row g-2 align-items-end mb-3" method="GET" action="/usuarios" role="search">
+        <div class="col-12 col-md-4">
+            <label class="form-label" for="nombre_usuario">Nombre de usuario</label>
+            <div class="input-group"><span class="input-group-text"><i class="icon-user" aria-hidden="true"></i></span>
+                <input type="search" id="nombre_usuario" name="nombre_usuario" class="form-control" placeholder="Ej. empleado01" value="<%= filtros.nombre_usuario %>"></div>
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="estado">Estado</label>
+            <select id="estado" name="estado" class="form-select">
+                <option value="">Todos</option>
+                <option value="activo" <%= filtros.estado === 'activo' ? 'selected' : '' %>>Activo</option>
+                <option value="inactivo" <%= filtros.estado === 'inactivo' ? 'selected' : '' %>>Inactivo</option>
+            </select>
+        </div>
+        <div class="col-auto"><button type="submit" class="btn btn-turquesa"><i class="icon-search" aria-hidden="true"></i>Buscar</button></div>
+        <div class="col-auto"><a href="/usuarios" class="btn btn-blanco"><i class="icon-refresh-cw" aria-hidden="true"></i>Limpiar</a></div>
+    </form>
+
+    <div class="tabla-contenedor">
+        <table class="tabla">
+            <thead><tr><th>ID</th><th>Usuario</th><th>Rol</th><th>Estado</th><th class="text-center">Acciones</th></tr></thead>
+            <tbody>
+            <% if (!usuarios.length) { %><tr class="vacio"><td colspan="5">No hay cuentas de empleado con esos filtros.</td></tr><% } %>
+            <% usuarios.forEach((u) => { %>
+                <tr>
+                    <td><%= u.id_usuario %></td>
+                    <td><strong><%= u.nombre_usuario %></strong></td>
+                    <td>Empleado</td>
+                    <td>
+                        <span class="estado estado-<%= u.activo ? 'activo' : 'inactivo' %>">
+                            <i class="icon-<%= u.activo ? 'circle-check' : 'ban' %>" aria-hidden="true"></i><%= u.activo ? 'Activo' : 'Inactivo' %>
+                        </span>
+                    </td>
+                    <td>
+                        <div class="acciones">
+                            <a href="/usuarios/<%= u.id_usuario %>/editar" class="btn-icono" title="Editar" aria-label="Editar <%= u.nombre_usuario %>"><i class="icon-pencil" aria-hidden="true"></i></a>
+                            <form action="/usuarios/<%= u.id_usuario %>/estado" method="POST"
+                                  data-confirmar="<%= u.activo ? `¿Desactivar la cuenta ${u.nombre_usuario}? Ya no podrá iniciar sesión.` : `¿Activar la cuenta ${u.nombre_usuario}?` %>">
+                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                <button type="submit" class="btn-icono <%= u.activo ? 'peligro' : '' %>" title="<%= u.activo ? 'Desactivar' : 'Activar' %>" aria-label="<%= u.activo ? 'Desactivar' : 'Activar' %> <%= u.nombre_usuario %>">
+                                    <i class="icon-<%= u.activo ? 'toggle-right' : 'toggle-left' %>" aria-hidden="true"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <%- include('../partials/paginacion') %>
+</section>
+
+<%- include('../partials/finLayout') %>
+<%- include('../partials/footer') %>

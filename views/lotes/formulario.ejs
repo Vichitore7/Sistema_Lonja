@@ -1,0 +1,129 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+<% const esEdicion = Boolean(lote); const e = errores || {}; %>
+
+<%- include('../partials/encabezado', { titulo: 'Lotes', migas: [{ texto: 'Lotes', url: '/lotes' }, { texto: esEdicion ? `Editar lote ${f.folio(lote.id_lte)}` : 'Nuevo lote' }] }) %>
+
+<%- include('../partials/alerts') %>
+<% if (errorEspecies) { %>
+    <div class="alert alert-danger" role="alert"><i class="icon-circle-alert" aria-hidden="true"></i><div><%= errorEspecies %></div></div>
+<% } %>
+
+<form class="tarjeta" id="formLote" method="POST" enctype="multipart/form-data" novalidate
+      action="<%= esEdicion ? `/lotes/${lote.id_lte}/editar` : '/lotes' %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <div class="tarjeta-titulo">
+        <i class="icon-file-text" aria-hidden="true"></i>
+        <div>
+            <h2><%= esEdicion ? `Editar lote ${f.folio(lote.id_lte)}` : 'Nuevo lote' %></h2>
+            <p><%= esEdicion ? 'Modifica los datos del lote disponible y sus especies.' : 'Registra un nuevo lote de producto en el sistema.' %></p>
+        </div>
+    </div>
+
+    <div class="franja"><i class="icon-info" aria-hidden="true"></i>Información del lote</div>
+    <div class="row g-3 mb-3">
+        <div class="col-12 col-sm-6 col-lg-3">
+            <label class="form-label" for="kilos">Kilogramos totales <span class="req">*</span></label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="icon-weight" aria-hidden="true"></i></span>
+                <input type="number" id="kilos" name="kilos" class="form-control <%= e.kilos ? 'is-invalid' : '' %>" placeholder="Ej. 25.00"
+                       min="0.01" step="0.01" value="<%= datos.kilos || '' %>" required <%- e.kilos ? 'aria-describedby="error-kilos"' : '' %>>
+                <span class="input-group-text">kg</span>
+            </div>
+            <%- include('../partials/campoError', { campo: 'kilos', errores: e }) %>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <label class="form-label" for="numero_cajas">Número de cajas <span class="req">*</span></label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="icon-package" aria-hidden="true"></i></span>
+                <input type="number" id="numero_cajas" name="numero_cajas" class="form-control <%= e.numero_cajas ? 'is-invalid' : '' %>" placeholder="Ej. 5"
+                       min="1" step="1" value="<%= datos.numero_cajas || '' %>" required>
+            </div>
+            <%- include('../partials/campoError', { campo: 'numero_cajas', errores: e }) %>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <label class="form-label" for="precio_kilo_salida">Precio de salida por kg <span class="req">*</span></label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="icon-dollar-sign" aria-hidden="true"></i></span>
+                <input type="number" id="precio_kilo_salida" name="precio_kilo_salida" class="form-control <%= e.precio_kilo_salida ? 'is-invalid' : '' %>" placeholder="Ej. 120.00"
+                       min="0" step="0.01" value="<%= datos.precio_kilo_salida || '' %>" required>
+            </div>
+            <%- include('../partials/campoError', { campo: 'precio_kilo_salida', errores: e }) %>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <label class="form-label" for="fecha">Fecha de registro <span class="req">*</span></label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="icon-calendar" aria-hidden="true"></i></span>
+                <input type="date" id="fecha" name="fecha" class="form-control <%= e.fecha ? 'is-invalid' : '' %>" max="<%= hoy %>" value="<%= datos.fecha || hoy %>" required>
+            </div>
+            <%- include('../partials/campoError', { campo: 'fecha', errores: e }) %>
+        </div>
+    </div>
+
+    <div class="franja"><i class="icon-fish" aria-hidden="true"></i><div>Especies del lote <span class="req">*</span><small>Agrega una o varias especies que conforman el lote.</small></div></div>
+
+    <div class="row g-3 align-items-end mb-3" id="capturaEspecie">
+        <div class="col-12 col-md-3">
+            <label class="form-label" for="nuevaTipo">Tipo <span class="req">*</span></label>
+            <select id="nuevaTipo" class="form-select">
+                <option value="">Seleccionar tipo</option>
+                <% tipos.forEach((t) => { %><option value="<%= t.id_tpo %>"><%= t.nombre %></option><% }) %>
+            </select>
+        </div>
+        <div class="col-12 col-md-4">
+            <label class="form-label" for="nuevaEspecie">Especie <span class="req">*</span></label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="icon-fish" aria-hidden="true"></i></span>
+                <input type="text" id="nuevaEspecie" class="form-control" placeholder="Ej. Huachinango" maxlength="100">
+            </div>
+        </div>
+        <div class="col-12 col-md-3" id="contenedorImagen">
+            <label class="form-label" for="nuevaImagen">Imagen <span class="texto-sec fw-normal">(opcional)</span></label>
+            <input type="file" id="nuevaImagen" class="form-control" accept="image/jpeg,image/png,image/webp">
+        </div>
+        <div class="col-12 col-md-2">
+            <button type="button" class="btn btn-turquesa w-100" id="agregarEspecie"><i class="icon-plus" aria-hidden="true"></i>Agregar</button>
+        </div>
+        <div class="col-12"><div class="form-text">Imagen JPG, PNG o WEBP de máximo 2 MB. <% if (!tipos.length) { %><strong class="text-danger">Primero registra al menos un Tipo.</strong><% } %></div></div>
+        <div class="col-12"><div class="invalid-feedback" id="errorCaptura" role="alert"></div></div>
+    </div>
+
+    <div class="tabla-contenedor mb-2">
+        <table class="tabla">
+            <thead><tr><th>Tipo</th><th>Especie</th><th>Imagen</th><th class="text-center">Acciones</th></tr></thead>
+            <tbody id="listaEspecies">
+            <% especies.forEach((es) => { const tipo = tipos.find((t) => t.id_tpo === es.id_tpo); %>
+                <tr data-ref="<%= es.ref %>">
+                    <td><%= tipo ? tipo.nombre : 'Sin tipo' %></td>
+                    <td><%= es.nombre %></td>
+                    <td>
+                        <% if (es.imagen) { %><img src="/uploads/especies/<%= es.imagen %>" alt="<%= es.nombre %>" class="miniatura">
+                        <% } else { %><span class="miniatura-vacia" title="Sin imagen"><i class="icon-image" aria-hidden="true"></i></span><% } %>
+                        <input type="hidden" name="especies[<%= es.ref %>][ref]" value="<%= es.ref %>">
+                        <input type="hidden" name="especies[<%= es.ref %>][nombre]" value="<%= es.nombre %>">
+                        <input type="hidden" name="especies[<%= es.ref %>][id_tpo]" value="<%= es.id_tpo || '' %>">
+                        <% if (es.id_epe) { %><input type="hidden" name="especies[<%= es.ref %>][id_epe]" value="<%= es.id_epe %>"><% } %>
+                    </td>
+                    <td><div class="acciones"><button type="button" class="btn-icono peligro" data-quitar-especie title="Quitar" aria-label="Quitar <%= es.nombre %>"><i class="icon-trash-2" aria-hidden="true"></i></button></div></td>
+                </tr>
+            <% }) %>
+            <tr class="vacio" id="filaVacia" <%- especies.length ? 'hidden' : '' %>><td colspan="4">Aún no agregas especies a este lote.</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <% if (errorEspecies && especies.some((es) => !es.id_epe)) { %>
+        <p class="form-text">Si habías elegido imágenes nuevas, vuelve a agregarlas: por seguridad no se conservan al fallar la validación.</p>
+    <% } %>
+
+    <div class="pie-formulario">
+        <span class="small"><span class="req">*</span> Campos obligatorios</span>
+        <div class="botones">
+            <a href="<%= esEdicion ? `/lotes/${lote.id_lte}` : '/lotes' %>" class="btn btn-blanco"><i class="icon-x" aria-hidden="true"></i>Cancelar</a>
+            <button type="submit" class="btn btn-turquesa"><i class="icon-save" aria-hidden="true"></i><%= esEdicion ? 'Guardar cambios' : 'Guardar lote' %></button>
+        </div>
+    </div>
+</form>
+
+<%- include('../partials/finLayout') %>
+<%- include('../partials/footer', { scripts: ['lote.js'] }) %>

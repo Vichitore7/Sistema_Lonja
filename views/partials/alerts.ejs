@@ -1,0 +1,9 @@
+<% if (typeof exito !== 'undefined' && exito) { %>
+    <div class="alert alert-success" role="status"><i class="icon-circle-check" aria-hidden="true"></i><div><%= exito %></div></div>
+<% } %>
+<% if (typeof alerta !== 'undefined' && alerta) { %>
+    <div class="alert alert-danger" role="alert"><i class="icon-circle-alert" aria-hidden="true"></i><div><%= alerta %></div></div>
+<% } %>
+<% if (typeof errores !== 'undefined' && errores && Object.keys(errores).length) { %>
+    <div class="alert alert-danger" role="alert"><i class="icon-circle-alert" aria-hidden="true"></i><div>Revisa los campos marcados antes de continuar.</div></div>
+<% } %>

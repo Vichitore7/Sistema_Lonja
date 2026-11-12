@@ -1,0 +1,51 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+
+<%- include('../partials/encabezado', { titulo: 'Compradores', migas: [{ texto: 'Compradores', url: '/compradores' }, { texto: `Comprador ${f.folio(comprador.codigo_cpr)}` }] }) %>
+<%- include('../partials/alerts') %>
+
+<section class="tarjeta">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div class="tarjeta-titulo">
+            <i class="icon-user" aria-hidden="true"></i>
+            <div><h2><%= f.nombreCompleto(comprador) %></h2><p>Código <%= f.folio(comprador.codigo_cpr) %></p></div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="/compradores" class="btn btn-blanco"><i class="icon-arrow-left" aria-hidden="true"></i>Volver</a>
+            <a href="/compradores/<%= comprador.codigo_cpr %>/editar" class="btn btn-blanco"><i class="icon-pencil" aria-hidden="true"></i>Editar</a>
+            <a href="/compras/nueva?codigo_cpr=<%= comprador.codigo_cpr %>" class="btn btn-turquesa"><i class="icon-shopping-cart" aria-hidden="true"></i>Registrar compra</a>
+        </div>
+    </div>
+
+    <div class="franja"><i class="icon-info" aria-hidden="true"></i>Datos del comprador</div>
+    <dl class="lista-datos mb-4">
+        <dt>Código:</dt><dd><%= f.folio(comprador.codigo_cpr) %></dd>
+        <dt>Nombre:</dt><dd><%= f.nombreCompleto(comprador) %></dd>
+        <dt>Dirección:</dt><dd><%= comprador.direccion %></dd>
+        <dt>Correo:</dt><dd><%= comprador.correo || '—' %></dd>
+    </dl>
+
+    <div class="franja"><i class="icon-shopping-cart" aria-hidden="true"></i>Compras del comprador</div>
+    <div class="tabla-contenedor">
+        <table class="tabla">
+            <thead><tr><th>N.º compra</th><th>Lote</th><th class="num">Kilogramos</th><th class="num">Precio final (kg)</th><th class="num">Importe total</th><th>Fecha</th><th class="text-center">Acciones</th></tr></thead>
+            <tbody>
+            <% if (!comprador.compras.length) { %><tr class="vacio"><td colspan="7">Este comprador aún no tiene compras.</td></tr><% } %>
+            <% comprador.compras.forEach((c) => { %>
+                <tr>
+                    <td><%= f.folio(c.id_cmp) %></td>
+                    <td><span class="chip-folio"><%= f.folio(c.id_lte) %></span></td>
+                    <td class="num"><%= f.formatoKg(c.lote.kilos) %></td>
+                    <td class="num"><%= f.formatoMoneda(c.precio_kilo_final) %></td>
+                    <td class="num fw-bold"><%= f.formatoMoneda(c.precio_total) %></td>
+                    <td><%= f.formatoFecha(c.fecha) %></td>
+                    <td><div class="acciones"><a href="/compras/<%= c.id_cmp %>" class="btn-icono" title="Ver compra" aria-label="Ver compra <%= f.folio(c.id_cmp) %>"><i class="icon-eye" aria-hidden="true"></i></a></div></td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<%- include('../partials/finLayout') %>
+<%- include('../partials/footer') %>

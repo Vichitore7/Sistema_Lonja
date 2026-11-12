@@ -1,0 +1,51 @@
+<%- include('../partials/head') %>
+<main class="pagina-login" id="contenido">
+    <div class="login-caja">
+        <section class="login-marca" aria-hidden="false">
+            <img src="/img/logo.svg" alt="">
+            <h1>Lonja<br>Veracruz</h1>
+            <p class="mb-0 mt-2">Sistema de gestión comercial</p>
+            <div class="linea"></div>
+            <ul>
+                <li><i class="icon-package" aria-hidden="true"></i>Control de lotes</li>
+                <li><i class="icon-layers" aria-hidden="true"></i>Inventario de especies</li>
+                <li><i class="icon-shopping-cart" aria-hidden="true"></i>Registro de compras</li>
+                <li><i class="icon-chart-column" aria-hidden="true"></i>Reportes de ventas</li>
+            </ul>
+            <div class="ola" aria-hidden="true"></div>
+        </section>
+
+        <section class="login-form">
+            <h2>Iniciar sesión</h2>
+            <p class="subtitulo">Accede al Sistema Lonja de Veracruz</p>
+
+            <% if (exito) { %>
+                <div class="alert alert-success" role="status"><i class="icon-circle-check" aria-hidden="true"></i><div><%= exito %></div></div>
+            <% } %>
+            <% if (error) { %>
+                <div class="alert alert-danger" role="alert"><i class="icon-circle-alert" aria-hidden="true"></i><div><%= error %></div></div>
+            <% } %>
+
+            <form action="/login" method="POST" novalidate>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="mb-3">
+                    <label for="nombre_usuario" class="form-label"><i class="icon-user" aria-hidden="true"></i>Usuario</label>
+                    <input type="text" id="nombre_usuario" name="nombre_usuario" class="form-control" placeholder="Ingresa tu usuario"
+                           value="<%= datos.nombre_usuario || '' %>" autocomplete="username" maxlength="50" required autofocus>
+                </div>
+                <div class="mb-4">
+                    <label for="password" class="form-label"><i class="icon-lock" aria-hidden="true"></i>Contraseña</label>
+                    <div class="input-group">
+                        <input type="password" id="password" name="password" class="form-control" placeholder="Ingresa tu contraseña"
+                               autocomplete="current-password" maxlength="200" required>
+                        <button type="button" class="btn-ver-password" data-ver-password="password" aria-label="Mostrar contraseña" title="Mostrar contraseña">
+                            <i class="icon-eye-off" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-navy w-100 py-2"><i class="icon-log-in" aria-hidden="true"></i>Iniciar sesión</button>
+            </form>
+        </section>
+    </div>
+</main>
+<%- include('../partials/footer') %>

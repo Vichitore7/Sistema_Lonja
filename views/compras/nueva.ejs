@@ -1,0 +1,117 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+<% const e = errores || {}; %>
+
+<%- include('../partials/encabezado', { titulo: 'Registrar compra', migas: [{ texto: 'Compras', url: '/compras/historial' }, { texto: 'Registrar compra' }] }) %>
+<%- include('../partials/alerts') %>
+
+<form class="tarjeta" id="formCompra" method="POST" action="/compras" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="tarjeta-titulo">
+        <i class="icon-shopping-cart" aria-hidden="true"></i>
+        <div><h2>Registrar compra</h2><p>Registra la venta de un lote completo a un comprador.</p></div>
+    </div>
+
+    <!-- 1. Comprador: búsqueda SOLO por código -->
+    <div class="franja"><i class="icon-users" aria-hidden="true"></i>Datos del comprador</div>
+    <div class="row g-3 align-items-end mb-3">
+        <div class="col-12 col-md-4 col-xl-3">
+            <label class="form-label" for="codigo_cpr">Código del comprador <span class="req">*</span></label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="icon-id-card" aria-hidden="true"></i></span>
+                <input type="text" inputmode="numeric" pattern="[0-9]*" id="codigo_cpr" name="codigo_cpr" maxlength="9"
+                       class="form-control <%= e.codigo_cpr ? 'is-invalid' : '' %>" placeholder="Ej. 001" value="<%= datos.codigo_cpr %>" required>
+            </div>
+        </div>
+        <div class="col-12 col-md-3 col-xl-auto">
+            <button type="button" class="btn btn-turquesa w-100" id="buscarComprador"><i class="icon-search" aria-hidden="true"></i>Buscar comprador</button>
+        </div>
+        <div class="col-12 col-md-5 col-xl-4">
+            <div id="resultadoComprador" class="resultado-comprador <%= e.codigo_cpr ? 'error' : '' %>" aria-live="polite" <%- comprador || e.codigo_cpr ? '' : 'hidden' %>>
+                <% if (e.codigo_cpr) { %>
+                    <i class="icon-circle-alert" aria-hidden="true"></i><div><%= e.codigo_cpr %></div>
+                <% } else if (comprador) { %>
+                    <i class="icon-circle-check" aria-hidden="true"></i><div><strong>Comprador encontrado</strong><br>Código: <%= f.folio(comprador.codigo_cpr) %><br>Nombre: <%= comprador.nombre %></div>
+                <% } %>
+            </div>
+        </div>
+        <div class="col-12 col-xl text-xl-end">
+            <a href="/compradores/nuevo?volver=compra" class="btn btn-blanco"><i class="icon-user-plus" aria-hidden="true"></i>Nuevo comprador</a>
+        </div>
+    </div>
+
+    <!-- 2. Lote disponible -->
+    <div class="franja"><i class="icon-layers" aria-hidden="true"></i>Datos del lote</div>
+    <div class="row g-3 mb-3">
+        <div class="col-12 col-lg-4">
+            <label class="form-label" for="id_lte">Lote <span class="req">*</span></label>
+            <select id="id_lte" name="id_lte" class="form-select <%= e.id_lte ? 'is-invalid' : '' %>" required>
+                <option value="">Selecciona un lote disponible</option>
+                <% lotes.forEach((l) => { %>
+                    <option value="<%= l.id_lte %>" <%= String(l.id_lte) === String(datos.id_lte) ? 'selected' : '' %>><%= f.folio(l.id_lte) %> – Disponible – <%= l.especies.map((es) => es.nombre).join(', ') %></option>
+                <% }) %>
+            </select>
+            <%- include('../partials/campoError', { campo: 'id_lte', errores: e }) %>
+            <% if (!lotes.length) { %><div class="form-text">No hay lotes disponibles para vender.</div><% } %>
+        </div>
+        <div class="col-4 col-lg-2 col-xl-2"><div class="dato"><i class="icon-weight" aria-hidden="true"></i><div><small>Kilogramos</small><strong id="loteKilos">—</strong></div></div></div>
+        <div class="col-4 col-lg-2 col-xl-2"><div class="dato"><i class="icon-package" aria-hidden="true"></i><div><small>Cajas</small><strong id="loteCajas">—</strong></div></div></div>
+        <div class="col-4 col-lg-4 col-xl-4"><div class="dato"><i class="icon-dollar-sign" aria-hidden="true"></i><div><small>Precio de salida</small><strong id="lotePrecio">—</strong></div></div></div>
+    </div>
+
+    <div class="row g-4 mb-2">
+        <div class="col-12 col-lg-6">
+            <div class="franja"><i class="icon-fish" aria-hidden="true"></i>Especies del lote</div>
+            <table class="tabla">
+                <thead><tr><th>Tipo</th><th>Especie</th></tr></thead>
+                <tbody id="loteEspecies"><tr class="vacio"><td colspan="2">Selecciona un lote para ver sus especies.</td></tr></tbody>
+            </table>
+        </div>
+        <!-- 3. Precio final acordado presencialmente -->
+        <div class="col-12 col-lg-6">
+            <div class="franja"><i class="icon-tag" aria-hidden="true"></i>Datos de la compra</div>
+            <label class="form-label" for="precio_kilo_final">Precio final por kg <span class="req">*</span></label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="icon-dollar-sign" aria-hidden="true"></i></span>
+                <input type="number" id="precio_kilo_final" name="precio_kilo_final" class="form-control <%= e.precio_kilo_final ? 'is-invalid' : '' %>"
+                       placeholder="Ej. 110.00" min="0.01" step="0.01" value="<%= datos.precio_kilo_final %>" required>
+                <span class="input-group-text">/ kg</span>
+            </div>
+            <%- include('../partials/campoError', { campo: 'precio_kilo_final', errores: e }) %>
+            <div class="importe-total"><span>Importe total</span><strong id="importeTotal">$0.00</strong></div>
+            <div class="form-text">El total se vuelve a calcular en el servidor: kilos del lote × precio final por kg.</div>
+        </div>
+    </div>
+
+    <div class="pie-formulario">
+        <span class="small"><span class="req">*</span> Campos obligatorios</span>
+        <div class="botones">
+            <a href="/compras/historial" class="btn btn-blanco"><i class="icon-x" aria-hidden="true"></i>Cancelar</a>
+            <button type="submit" class="btn btn-turquesa"><i class="icon-save" aria-hidden="true"></i>Registrar compra</button>
+        </div>
+    </div>
+</form>
+
+<!-- Confirmación (paso 7 del recorrido de venta) -->
+<div class="modal fade" id="modalConfirmar" tabindex="-1" aria-labelledby="tituloConfirmar" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloConfirmar">Confirmar compra</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="lista-datos" id="resumenCompra"></dl>
+                <p class="small texto-sec mt-3 mb-0">Al confirmar, el lote pasará a <strong>Vendido</strong> y no podrá venderse de nuevo.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-blanco" data-bs-dismiss="modal">Revisar</button>
+                <button type="button" class="btn btn-turquesa" id="confirmarCompra"><i class="icon-circle-check" aria-hidden="true"></i>Confirmar y registrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="application/json" id="datosLotes"><%- lotesJSON %></script>
+<%- include('../partials/finLayout') %>
+<%- include('../partials/footer', { scripts: ['compra.js'] }) %>

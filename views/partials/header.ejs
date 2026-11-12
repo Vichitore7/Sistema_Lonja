@@ -1,0 +1,22 @@
+<header class="barra-superior">
+    <button type="button" class="btn-menu" data-abrir-menu aria-controls="sidebar" aria-label="Abrir menú" title="Menú">
+        <i class="icon-menu" aria-hidden="true"></i>
+    </button>
+    <span class="d-none d-lg-block"></span>
+    <div class="dropdown usuario-menu">
+        <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="avatar"><i class="icon-user" aria-hidden="true"></i></span>
+            <span><%= usuario.rol === 'ADMINISTRADOR' ? 'Administrador' : 'Empleado' %></span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li><span class="dropdown-item-text small texto-sec">Sesión: <strong><%= usuario.nombre_usuario %></strong></span></li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <form action="/logout" method="POST">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="dropdown-item d-flex gap-2 align-items-center"><i class="icon-log-out" aria-hidden="true"></i>Cerrar sesión</button>
+                </form>
+            </li>
+        </ul>
+    </div>
+</header>

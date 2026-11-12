@@ -1,0 +1,62 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+<% const e = errores || {};
+   const campo = (nombre, etiqueta, icono, { req = false, tipo = 'text', placeholder = '', max = 100, col = 'col-md-4' } = {}) => ({ nombre, etiqueta, icono, req, tipo, placeholder, max, col }); %>
+
+<%- include('../partials/encabezado', { titulo: 'Compradores', migas: [{ texto: 'Compradores', url: '/compradores' }, { texto: comprador ? 'Editar comprador' : 'Nuevo comprador' }] }) %>
+<%- include('../partials/alerts') %>
+
+<form class="tarjeta" method="POST" action="<%= comprador ? `/compradores/${comprador.codigo_cpr}/editar` : '/compradores' %>" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% if (volver) { %><input type="hidden" name="volver" value="<%= volver %>"><% } %>
+    <div class="tarjeta-titulo">
+        <i class="icon-user-plus" aria-hidden="true"></i>
+        <div><h2><%= comprador ? 'Editar comprador' : 'Nuevo comprador' %></h2><p><%= comprador ? 'Actualiza los datos de contacto. El código no cambia.' : 'Registra los datos de un comprador en el sistema.' %></p></div>
+    </div>
+
+    <div class="franja"><i class="icon-info" aria-hidden="true"></i>Información del comprador</div>
+    <div class="row g-3 mb-3">
+        <div class="col-12 col-md-4">
+            <label class="form-label" for="codigo_cpr">Código del comprador</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="icon-hash" aria-hidden="true"></i></span>
+                <input type="text" id="codigo_cpr" class="form-control" value="<%= comprador ? f.folio(comprador.codigo_cpr) : 'Se asignará automáticamente' %>" readonly>
+            </div>
+        </div>
+        <% [
+            campo('nombre', 'Nombre', 'user', { req: true, placeholder: 'Nombre del comprador' }),
+            campo('apellido_paterno', 'Apellido paterno', 'user', { req: true, placeholder: 'Primer apellido' }),
+            campo('apellido_materno', 'Apellido materno', 'user', { placeholder: 'Segundo apellido' }),
+            campo('correo', 'Correo electrónico', 'mail', { tipo: 'email', placeholder: 'correo@ejemplo.com', max: 150, col: 'col-md-8' })
+        ].forEach((c) => { %>
+            <div class="col-12 <%= c.col %>">
+                <label class="form-label" for="<%= c.nombre %>"><%= c.etiqueta %> <% if (c.req) { %><span class="req">*</span><% } %></label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="icon-<%= c.icono %>" aria-hidden="true"></i></span>
+                    <input type="<%= c.tipo %>" id="<%= c.nombre %>" name="<%= c.nombre %>" class="form-control <%= e[c.nombre] ? 'is-invalid' : '' %>"
+                           placeholder="<%= c.placeholder %>" maxlength="<%= c.max %>" value="<%= datos[c.nombre] || '' %>" <%= c.req ? 'required' : '' %>>
+                </div>
+                <%- include('../partials/campoError', { campo: c.nombre, errores: e }) %>
+            </div>
+        <% }) %>
+        <div class="col-12">
+            <label class="form-label" for="direccion">Dirección <span class="req">*</span></label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="icon-map-pin" aria-hidden="true"></i></span>
+                <textarea id="direccion" name="direccion" class="form-control <%= e.direccion ? 'is-invalid' : '' %>" rows="2" maxlength="255" placeholder="Dirección del comprador" required><%= datos.direccion || '' %></textarea>
+            </div>
+            <%- include('../partials/campoError', { campo: 'direccion', errores: e }) %>
+        </div>
+    </div>
+
+    <div class="pie-formulario">
+        <span class="small"><span class="req">*</span> Campos obligatorios</span>
+        <div class="botones">
+            <a href="<%= volver ? '/compras/nueva' : (comprador ? `/compradores/${comprador.codigo_cpr}` : '/compradores') %>" class="btn btn-blanco"><i class="icon-x" aria-hidden="true"></i>Cancelar</a>
+            <button type="submit" class="btn btn-turquesa"><i class="icon-save" aria-hidden="true"></i>Guardar comprador</button>
+        </div>
+    </div>
+</form>
+
+<%- include('../partials/finLayout') %>
+<%- include('../partials/footer') %>

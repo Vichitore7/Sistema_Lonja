@@ -1,0 +1,19 @@
+<% const p = paginacion; %>
+<div class="paginacion">
+    <span>Mostrando <%= p.desde %> a <%= p.hasta %> de <%= p.total %> <%= typeof nombreRegistros !== 'undefined' ? nombreRegistros : 'registros' %></span>
+    <% if (p.paginas > 1) { %>
+    <nav aria-label="Paginación">
+        <ul class="pagination">
+            <li class="page-item <%= p.pagina <= 1 ? 'disabled' : '' %>">
+                <a class="page-link" href="<%= p.enlace(Math.max(1, p.pagina - 1)) %>" aria-label="Anterior"><i class="icon-chevron-left" aria-hidden="true"></i></a>
+            </li>
+            <% for (let i = Math.max(1, p.pagina - 2); i <= Math.min(p.paginas, p.pagina + 2); i++) { %>
+                <li class="page-item <%= i === p.pagina ? 'active' : '' %>"><a class="page-link" href="<%= p.enlace(i) %>" <%- i === p.pagina ? 'aria-current="page"' : '' %>><%= i %></a></li>
+            <% } %>
+            <li class="page-item <%= p.pagina >= p.paginas ? 'disabled' : '' %>">
+                <a class="page-link" href="<%= p.enlace(Math.min(p.paginas, p.pagina + 1)) %>" aria-label="Siguiente"><i class="icon-chevron-right" aria-hidden="true"></i></a>
+            </li>
+        </ul>
+    </nav>
+    <% } %>
+</div>

@@ -1,0 +1,26 @@
+<%# Encabezado de módulo: título, subtítulo y breadcrumb. Las acciones van en el bloque "derecha" %>
+<div class="encabezado">
+    <div>
+        <h1><%= titulo %></h1>
+        <% if (typeof migas !== 'undefined' && migas) { %>
+            <nav class="migas" aria-label="Ruta de navegación">
+                <i class="icon-house" aria-hidden="true"></i>
+                <% migas.forEach((m, i) => { %>
+                    <% if (i > 0) { %><i class="icon-chevron-right" aria-hidden="true"></i><% } %>
+                    <% if (m.url) { %><a href="<%= m.url %>"><%= m.texto %></a><% } else { %><span aria-current="page"><%= m.texto %></span><% } %>
+                <% }) %>
+            </nav>
+        <% } else if (typeof subtitulo !== 'undefined') { %>
+            <p class="subtitulo"><%= subtitulo %></p>
+        <% } %>
+        <div class="subrayado"></div>
+    </div>
+    <div class="acciones-encabezado">
+        <% if (typeof fecha !== 'undefined' && fecha) { %>
+            <span class="fecha-chip ocultar-movil"><i class="icon-calendar" aria-hidden="true"></i><%= fechaHoy %></span>
+        <% } %>
+        <% if (typeof boton !== 'undefined' && boton) { %>
+            <a href="<%= boton.url %>" class="btn <%= boton.clase || 'btn-turquesa' %>"><i class="icon-<%= boton.icono %>" aria-hidden="true"></i><%= boton.texto %></a>
+        <% } %>
+    </div>
+</div>

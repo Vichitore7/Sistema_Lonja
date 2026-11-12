@@ -1,0 +1,64 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+
+<%- include('../partials/encabezado', { titulo: 'Compras', migas: [{ texto: 'Compras', url: '/compras/historial' }, { texto: 'Historial de compras' }] }) %>
+<%- include('../partials/alerts') %>
+
+<section class="tarjeta">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div class="tarjeta-titulo">
+            <i class="icon-shopping-cart" aria-hidden="true"></i>
+            <div><h2>Historial de compras</h2><p>Consulta las compras registradas en el sistema.</p></div>
+        </div>
+        <a href="/compras/nueva" class="btn btn-turquesa"><i class="icon-plus" aria-hidden="true"></i>Registrar compra</a>
+    </div>
+
+    <form class="row g-2 align-items-end mb-3" method="GET" action="/compras/historial" role="search">
+        <div class="col-6 col-md-2">
+            <label class="form-label" for="id_cmp">N.º de compra</label>
+            <div class="input-group"><span class="input-group-text"><i class="icon-hash" aria-hidden="true"></i></span>
+                <input type="text" inputmode="numeric" id="id_cmp" name="id_cmp" class="form-control" placeholder="Ej. 001" value="<%= filtros.id_cmp %>" maxlength="9"></div>
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="codigo_cpr">Comprador</label>
+            <div class="input-group"><span class="input-group-text"><i class="icon-user" aria-hidden="true"></i></span>
+                <input type="text" inputmode="numeric" id="codigo_cpr" name="codigo_cpr" class="form-control" placeholder="Código del comprador" value="<%= filtros.codigo_cpr %>" maxlength="9"></div>
+        </div>
+        <div class="col-12 col-md-4">
+            <span class="form-label d-block">Fecha</span>
+            <div class="d-flex gap-2 align-items-center">
+                <input type="date" name="desde" class="form-control" value="<%= filtros.desde %>" aria-label="Desde">
+                <span>a</span>
+                <input type="date" name="hasta" class="form-control" value="<%= filtros.hasta %>" aria-label="Hasta">
+            </div>
+        </div>
+        <div class="col-auto"><button type="submit" class="btn btn-turquesa"><i class="icon-search" aria-hidden="true"></i>Buscar</button></div>
+        <div class="col-auto"><a href="/compras/historial" class="btn btn-blanco"><i class="icon-refresh-cw" aria-hidden="true"></i>Limpiar</a></div>
+    </form>
+
+    <div class="tabla-contenedor">
+        <table class="tabla">
+            <thead><tr><th>N.º compra</th><th>Código comprador</th><th>Comprador</th><th>Lote</th><th class="num">Kilogramos</th><th class="num">Precio final (kg)</th><th class="num">Importe total</th><th>Fecha</th><th class="text-center">Acciones</th></tr></thead>
+            <tbody>
+            <% if (!compras.length) { %><tr class="vacio"><td colspan="9">No hay compras que coincidan con la búsqueda.</td></tr><% } %>
+            <% compras.forEach((c) => { %>
+                <tr>
+                    <td><strong><%= f.folio(c.id_cmp) %></strong></td>
+                    <td><%= f.folio(c.codigo_cpr) %></td>
+                    <td><%= f.nombreCompleto(c.comprador) %></td>
+                    <td><span class="chip-folio"><%= f.folio(c.id_lte) %></span></td>
+                    <td class="num"><%= f.formatoKg(c.lote.kilos) %></td>
+                    <td class="num"><%= f.formatoMoneda(c.precio_kilo_final) %></td>
+                    <td class="num fw-bold"><%= f.formatoMoneda(c.precio_total) %></td>
+                    <td><%= f.formatoFecha(c.fecha) %></td>
+                    <td><div class="acciones"><a href="/compras/<%= c.id_cmp %>" class="btn-icono" title="Ver detalle" aria-label="Ver compra <%= f.folio(c.id_cmp) %>"><i class="icon-eye" aria-hidden="true"></i></a></div></td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <%- include('../partials/paginacion') %>
+</section>
+
+<%- include('../partials/finLayout') %>
+<%- include('../partials/footer') %>

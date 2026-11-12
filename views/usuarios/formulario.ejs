@@ -1,0 +1,78 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+<% const e = errores || {}; const ep = erroresPassword || {}; %>
+
+<%- include('../partials/encabezado', { titulo: 'Usuarios', migas: [{ texto: 'Usuarios', url: '/usuarios' }, { texto: empleado ? 'Editar usuario' : 'Nuevo usuario' }] }) %>
+<%- include('../partials/alerts') %>
+<% if (erroresPassword) { %><div class="alert alert-danger" role="alert"><i class="icon-circle-alert" aria-hidden="true"></i><div>No se restableció la contraseña: revisa los campos.</div></div><% } %>
+
+<form class="tarjeta" method="POST" action="<%= empleado ? `/usuarios/${empleado.id_usuario}/editar` : '/usuarios' %>" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="tarjeta-titulo">
+        <i class="icon-user-plus" aria-hidden="true"></i>
+        <div><h2><%= empleado ? 'Editar usuario' : 'Nuevo usuario' %></h2><p><%= empleado ? 'Modifica el nombre de usuario del empleado.' : 'Crea una nueva cuenta de empleado.' %></p></div>
+    </div>
+
+    <div class="franja"><i class="icon-info" aria-hidden="true"></i>Información del usuario</div>
+    <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6">
+            <label class="form-label" for="nombre_usuario">Nombre de usuario <span class="req">*</span></label>
+            <div class="input-group"><span class="input-group-text"><i class="icon-user" aria-hidden="true"></i></span>
+                <input type="text" id="nombre_usuario" name="nombre_usuario" class="form-control <%= e.nombre_usuario ? 'is-invalid' : '' %>" placeholder="Ej. empleado03"
+                       maxlength="50" autocomplete="off" value="<%= datos.nombre_usuario || '' %>" required></div>
+            <%- include('../partials/campoError', { campo: 'nombre_usuario', errores: e }) %>
+        </div>
+        <div class="col-12 col-md-6">
+            <label class="form-label" for="rol">Rol</label>
+            <div class="input-group"><span class="input-group-text"><i class="icon-shield-user" aria-hidden="true"></i></span>
+                <select id="rol" class="form-select" disabled><option>Empleado</option></select></div>
+            <div class="form-text">El rol se asigna automáticamente como Empleado.</div>
+        </div>
+        <% if (!empleado) { %>
+            <% [['password', 'Contraseña', 'Mínimo 8 caracteres'], ['confirmar', 'Confirmar contraseña', 'Confirma la contraseña']].forEach(([campo, etiqueta, ph]) => { %>
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="<%= campo %>"><%= etiqueta %> <span class="req">*</span></label>
+                    <div class="input-group"><span class="input-group-text"><i class="icon-lock" aria-hidden="true"></i></span>
+                        <input type="password" id="<%= campo %>" name="<%= campo %>" class="form-control <%= e[campo] ? 'is-invalid' : '' %>" placeholder="<%= ph %>" minlength="8" maxlength="72" autocomplete="new-password" required>
+                        <button type="button" class="btn-ver-password" data-ver-password="<%= campo %>" aria-label="Mostrar contraseña" title="Mostrar contraseña"><i class="icon-eye-off" aria-hidden="true"></i></button>
+                    </div>
+                    <%- include('../partials/campoError', { campo, errores: e }) %>
+                </div>
+            <% }) %>
+        <% } %>
+    </div>
+
+    <div class="pie-formulario">
+        <span class="small"><span class="req">*</span> Campos obligatorios</span>
+        <div class="botones">
+            <a href="/usuarios" class="btn btn-blanco"><i class="icon-x" aria-hidden="true"></i>Cancelar</a>
+            <button type="submit" class="btn btn-turquesa"><i class="icon-save" aria-hidden="true"></i>Guardar usuario</button>
+        </div>
+    </div>
+</form>
+
+<% if (empleado) { %>
+<form class="tarjeta" method="POST" action="/usuarios/<%= empleado.id_usuario %>/password" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="franja"><i class="icon-key-round" aria-hidden="true"></i>Restablecer contraseña</div>
+    <div class="row g-3 mb-3">
+        <% [['password', 'Nueva contraseña', 'Mínimo 8 caracteres'], ['confirmar', 'Confirmar contraseña', 'Confirma la contraseña']].forEach(([campo, etiqueta, ph]) => { %>
+            <div class="col-12 col-md-6">
+                <label class="form-label" for="r-<%= campo %>"><%= etiqueta %> <span class="req">*</span></label>
+                <div class="input-group"><span class="input-group-text"><i class="icon-lock" aria-hidden="true"></i></span>
+                    <input type="password" id="r-<%= campo %>" name="<%= campo %>" class="form-control <%= ep[campo] ? 'is-invalid' : '' %>" placeholder="<%= ph %>" minlength="8" maxlength="72" autocomplete="new-password" required>
+                    <button type="button" class="btn-ver-password" data-ver-password="r-<%= campo %>" aria-label="Mostrar contraseña" title="Mostrar contraseña"><i class="icon-eye-off" aria-hidden="true"></i></button>
+                </div>
+                <%- include('../partials/campoError', { campo, errores: ep }) %>
+            </div>
+        <% }) %>
+    </div>
+    <div class="pie-formulario">
+        <span class="small texto-sec">El empleado usará la nueva contraseña en su próximo inicio de sesión.</span>
+        <div class="botones"><button type="submit" class="btn btn-navy"><i class="icon-key-round" aria-hidden="true"></i>Restablecer contraseña</button></div>
+    </div>
+</form>
+<% } %>
+
+<%- include('../partials/finLayout') %>
+<%- include('../partials/footer') %>

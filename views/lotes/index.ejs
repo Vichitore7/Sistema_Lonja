@@ -1,0 +1,82 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+
+<%- include('../partials/encabezado', { titulo: 'Lotes', subtitulo: 'Registro y administración de los lotes de producto', fecha: true,
+    boton: { url: '/lotes/nuevo', texto: 'Nuevo lote', icono: 'plus' } }) %>
+
+<%- include('../partials/alerts') %>
+
+<form class="tarjeta py-3" method="GET" action="/lotes" role="search">
+    <div class="row g-3 align-items-end">
+        <div class="col-12 col-lg-4">
+            <label class="form-label" for="buscar">Buscar</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="icon-search" aria-hidden="true"></i></span>
+                <input type="search" id="buscar" name="buscar" class="form-control" placeholder="Número de lote o especie…" value="<%= filtros.buscar %>">
+            </div>
+        </div>
+        <div class="col-6 col-md-3 col-lg-2">
+            <label class="form-label" for="estado">Estado</label>
+            <select id="estado" name="estado" class="form-select">
+                <option value="">Todos</option>
+                <% ['DISPONIBLE','VENDIDO','RETIRADO'].forEach((e) => { %><option value="<%= e %>" <%= filtros.estado === e ? 'selected' : '' %>><%= f.ETIQUETA_ESTADO[e] %></option><% }) %>
+            </select>
+        </div>
+        <div class="col-6 col-md-3 col-lg-2">
+            <label class="form-label" for="especie">Especie</label>
+            <select id="especie" name="especie" class="form-select">
+                <option value="">Todas</option>
+                <% especies.forEach((e) => { %><option value="<%= e %>" <%= filtros.especie === e ? 'selected' : '' %>><%= e %></option><% }) %>
+            </select>
+        </div>
+        <div class="col-6 col-md-3 col-lg-2">
+            <label class="form-label" for="id_tpo">Tipo</label>
+            <select id="id_tpo" name="id_tpo" class="form-select">
+                <option value="">Todos</option>
+                <% tipos.forEach((t) => { %><option value="<%= t.id_tpo %>" <%= filtros.id_tpo === String(t.id_tpo) ? 'selected' : '' %>><%= t.nombre %></option><% }) %>
+            </select>
+        </div>
+        <div class="col-6 col-md-3 col-lg-2 d-flex gap-2">
+            <button class="btn btn-turquesa flex-fill" type="submit" title="Aplicar filtros"><i class="icon-search" aria-hidden="true"></i><span class="visually-hidden">Buscar</span></button>
+            <a href="/lotes" class="btn btn-blanco flex-fill" title="Limpiar filtros"><i class="icon-refresh-cw" aria-hidden="true"></i><span class="visually-hidden">Limpiar filtros</span></a>
+        </div>
+    </div>
+</form>
+
+<section class="tarjeta">
+    <div class="tabla-contenedor">
+        <table class="tabla">
+            <thead><tr><th>No. de lote</th><th>Fecha de registro</th><th>Especies (resumen)</th><th class="num">Kilogramos</th><th class="num">Cajas</th><th class="num">Precio de salida (kg)</th><th>Estado</th><th class="text-center">Acciones</th></tr></thead>
+            <tbody>
+            <% if (!lotes.length) { %><tr class="vacio"><td colspan="8">No hay lotes registrados con esos filtros.</td></tr><% } %>
+            <% lotes.forEach((l) => { %>
+                <tr>
+                    <td><span class="chip-folio"><%= f.folio(l.id_lte) %></span></td>
+                    <td><%= f.formatoFecha(l.fecha) %></td>
+                    <td><%= l.especies.map((e) => e.nombre).join(', ') %></td>
+                    <td class="num"><%= f.formatoNumero(l.kilos) %></td>
+                    <td class="num"><%= l.numero_cajas %></td>
+                    <td class="num"><%= f.formatoMoneda(l.precio_kilo_salida) %></td>
+                    <td><%- include('../partials/estado', { estado: l.estado }) %></td>
+                    <td>
+                        <div class="acciones">
+                            <a href="/lotes/<%= l.id_lte %>" class="btn-icono" title="Ver" aria-label="Ver lote <%= f.folio(l.id_lte) %>"><i class="icon-eye" aria-hidden="true"></i></a>
+                            <% if (l.estado === 'DISPONIBLE') { %>
+                                <a href="/lotes/<%= l.id_lte %>/editar" class="btn-icono" title="Editar" aria-label="Editar lote <%= f.folio(l.id_lte) %>"><i class="icon-pencil" aria-hidden="true"></i></a>
+                                <form action="/lotes/<%= l.id_lte %>/retirar" method="POST" data-confirmar="¿Retirar el lote <%= f.folio(l.id_lte) %>? Ya no podrá venderse.">
+                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <button type="submit" class="btn-icono peligro" title="Retirar" aria-label="Retirar lote <%= f.folio(l.id_lte) %>"><i class="icon-ban" aria-hidden="true"></i></button>
+                                </form>
+                            <% } %>
+                        </div>
+                    </td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <%- include('../partials/paginacion', { nombreRegistros: 'lotes' }) %>
+</section>
+
+<%- include('../partials/finLayout') %>
+<%- include('../partials/footer') %>

@@ -1,0 +1,70 @@
+<%- include('../partials/head') %>
+<%- include('../partials/inicioLayout') %>
+<% const esAdmin = usuario.rol === 'ADMINISTRADOR'; %>
+
+<%- include('../partials/encabezado', { titulo: desde === 'inventario' ? 'Inventario' : 'Lotes',
+    migas: [desde === 'inventario' ? { texto: 'Inventario', url: '/inventario' } : { texto: 'Lotes', url: '/lotes' }, { texto: `Lote ${f.folio(lote.id_lte)}` }] }) %>
+
+<%- include('../partials/alerts') %>
+
+<section class="tarjeta">
+    <div class="d-flex justify-content-between flex-wrap gap-3 align-items-start mb-2">
+        <div class="tarjeta-titulo mb-0">
+            <i class="icon-layers" aria-hidden="true"></i>
+            <div>
+                <h2>Lote <%= f.folio(lote.id_lte) %></h2>
+                <p>Registrado el <%= f.formatoFechaHora(lote.fecha) %></p>
+            </div>
+            <%- include('../partials/estado', { estado: lote.estado }) %>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="<%= desde === 'inventario' ? '/inventario' : '/lotes' %>" class="btn btn-blanco"><i class="icon-arrow-left" aria-hidden="true"></i>Volver</a>
+            <% if (lote.estado === 'DISPONIBLE') { %>
+                <a href="/compras/nueva?id_lte=<%= lote.id_lte %>" class="btn btn-turquesa"><i class="icon-shopping-cart" aria-hidden="true"></i>Registrar compra</a>
+                <% if (esAdmin) { %>
+                    <a href="/lotes/<%= lote.id_lte %>/editar" class="btn btn-blanco"><i class="icon-pencil" aria-hidden="true"></i>Editar</a>
+                    <form action="/lotes/<%= lote.id_lte %>/retirar" method="POST" data-confirmar="¿Retirar el lote <%= f.folio(lote.id_lte) %>? Ya no podrá venderse.">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <button type="submit" class="btn btn-blanco text-danger"><i class="icon-ban" aria-hidden="true"></i>Retirar</button>
+                    </form>
+                <% } %>
+            <% } %>
+        </div>
+    </div>
+
+    <div class="franja"><i class="icon-info" aria-hidden="true"></i>Información del lote</div>
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-lg-3"><div class="dato"><i class="icon-weight" aria-hidden="true"></i><div><small>Kilogramos</small><strong><%= f.formatoKg(lote.kilos) %></strong></div></div></div>
+        <div class="col-6 col-lg-3"><div class="dato"><i class="icon-package" aria-hidden="true"></i><div><small>Cajas</small><strong><%= lote.numero_cajas %></strong></div></div></div>
+        <div class="col-6 col-lg-3"><div class="dato"><i class="icon-dollar-sign" aria-hidden="true"></i><div><small>Precio de salida</small><strong><%= f.formatoMoneda(lote.precio_kilo_salida) %> / kg</strong></div></div></div>
+        <div class="col-6 col-lg-3"><div class="dato"><i class="icon-calendar" aria-hidden="true"></i><div><small>Fecha de registro</small><strong><%= f.formatoFecha(lote.fecha) %></strong></div></div></div>
+    </div>
+
+    <div class="franja"><i class="icon-fish" aria-hidden="true"></i>Especies del lote</div>
+    <div class="row g-3 mb-3">
+        <% lote.especies.forEach((es) => { %>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="tarjeta-especie">
+                    <% if (es.imagen) { %><img src="/uploads/especies/<%= es.imagen %>" alt="<%= es.nombre %>" class="galeria-especie mb-2">
+                    <% } else { %><div class="galeria-especie mb-2 d-grid texto-sec" style="place-items:center"><i class="icon-fish" style="font-size:40px" aria-hidden="true"></i></div><% } %>
+                    <strong class="d-block"><%= es.nombre %></strong>
+                    <span class="texto-sec small"><%= es.tipo?.nombre %></span>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+
+    <% if (lote.compra) { %>
+        <div class="franja"><i class="icon-receipt" aria-hidden="true"></i>Venta del lote</div>
+        <dl class="lista-datos">
+            <dt>N.º de compra:</dt><dd><a href="/compras/<%= lote.compra.id_cmp %>"><%= f.folio(lote.compra.id_cmp) %></a></dd>
+            <dt>Comprador:</dt><dd><%= f.folio(lote.compra.codigo_cpr) %> — <%= f.nombreCompleto(lote.compra.comprador) %></dd>
+            <dt>Precio final por kg:</dt><dd><%= f.formatoMoneda(lote.compra.precio_kilo_final) %></dd>
+            <dt>Importe total:</dt><dd class="fw-bold"><%= f.formatoMoneda(lote.compra.precio_total) %></dd>
+            <dt>Fecha:</dt><dd><%= f.formatoFechaHora(lote.compra.fecha) %></dd>
+        </dl>
+    <% } %>
+</section>
+
+<%- include('../partials/finLayout') %>
+<%- include('../partials/footer') %>
