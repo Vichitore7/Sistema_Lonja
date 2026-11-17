@@ -23,3 +23,18 @@
         </div>
     </div>
 </div>
+
+<%# Aviso de compra realizada: el comprador se queda en el catálogo y puede seguir comprando %>
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div class="toast aviso-compra" id="avisoCompra" role="status" aria-live="polite" aria-atomic="true">
+        <div class="toast-body">
+            <i class="icon-circle-check" aria-hidden="true"></i>
+            <div>
+                <strong id="avisoCompraTitulo">Compra realizada</strong>
+                <p class="mb-2" id="avisoCompraTexto"></p>
+                <a href="/mis-compras" class="btn btn-sm btn-turquesa"><i class="icon-shopping-bag" aria-hidden="true"></i>Ver mis compras</a>
+                <button type="button" class="btn btn-sm btn-blanco" data-bs-dismiss="toast">Seguir comprando</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -25,6 +25,13 @@
             <% if (error) { %>
                 <div class="alert alert-danger" role="alert"><i class="icon-circle-alert" aria-hidden="true"></i><div><%= error %></div></div>
             <% } %>
+            <% if (typeof reenviar !== 'undefined' && reenviar) { %>
+                <form action="/confirmar/reenviar" method="POST" class="mb-3">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="nombre_usuario" value="<%= datos.nombre_usuario %>">
+                    <button type="submit" class="btn btn-blanco w-100"><i class="icon-mail" aria-hidden="true"></i>Reenviar correo de confirmación</button>
+                </form>
+            <% } %>
 
             <form action="/login" method="POST" novalidate>
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">

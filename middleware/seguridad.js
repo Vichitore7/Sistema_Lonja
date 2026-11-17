@@ -1,4 +1,40 @@
 import crypto from 'node:crypto';
+import cors from 'cors';
+import { urlSistema } from '../helpers/correos.js';
+
+// ---------- CORS (lista blanca de orígenes) ----------
+// Solo el propio sistema (URL_BACKEND:PORT_BACKEND) y los orígenes extra de CORS_ORIGENES
+// (separados por comas) pueden hacer peticiones desde el navegador. Otros sitios no reciben
+// las cabeceras CORS, así que el navegador no les deja leer las respuestas.
+const origenesPermitidos = () => new Set([
+    urlSistema(),
+    ...String(process.env.CORS_ORIGENES || '').split(',').map((o) => o.trim().replace(/\/+$/, '')).filter(Boolean)
+]);
+
+// Mismo origen: el Origin coincide con el host al que se hizo la petición (localhost, 127.0.0.1, IP de la red…)
+const esMismoOrigen = (req, origen) => {
+    try { return new URL(origen).host === req.get('host'); } catch { return false; }
+};
+
+const origenValido = (req, origen) => !origen || esMismoOrigen(req, origen) || origenesPermitidos().has(origen);
+
+export const configurarCors = (req, res, next) => cors({
+    origin: (origen, listo) => listo(null, origenValido(req, origen)),
+    credentials: true,
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'X-Requested-With', 'X-CSRF-Token']
+})(req, res, next);
+
+// Rechaza las solicitudes que cambian datos (POST, etc.) enviadas desde un origen no permitido
+export const rechazarOrigenNoPermitido = (req, res, next) => {
+    if (['GET', 'HEAD'].includes(req.method)) return next();
+    if (origenValido(req, req.get('origin'))) return next();
+    if (req.method === 'OPTIONS') return res.sendStatus(403); // preflight de otro sitio
+    return res.status(403).render('errores/error', {
+        pagina: 'Solicitud rechazada', codigo: 403, titulo: 'Solicitud rechazada',
+        detalle: 'La solicitud viene de un sitio no permitido.'
+    });
+};
 
 // ---------- Protección CSRF (doble envío) ----------
 // Se guarda un token aleatorio en la cookie _csrf y cada formulario POST lo envía en el campo oculto _csrf.
@@ -46,6 +82,7 @@ export const limitarLogin = (req, res, next) => {
         return res.status(429).render('auth/login', {
             pagina: 'Iniciar sesión',
             error: 'Demasiados intentos fallidos. Espera 15 minutos e inténtalo de nuevo.',
+            reenviar: false,
             datos: { nombre_usuario: req.body?.nombre_usuario || '' }
         });
     }
@@ -87,6 +124,12 @@ const demasiadas = (detalle) => (req, res) => res.status(429).render('errores/er
 export const limitarRegistro = crearLimite({
     ventanaMs: VENTANA_MS, max: 10, clave: (req) => req.ip,
     alExceder: demasiadas('Se enviaron demasiados registros desde este equipo. Espera unos minutos e inténtalo de nuevo.')
+});
+
+// Máximo 5 reenvíos del correo de confirmación por IP cada 15 minutos
+export const limitarReenvio = crearLimite({
+    ventanaMs: VENTANA_MS, max: 5, clave: (req) => req.ip,
+    alExceder: demasiadas('Pediste demasiados correos de confirmación. Espera unos minutos e inténtalo de nuevo.')
 });
 
 // Máximo 20 intentos de compra por cuenta cada minuto

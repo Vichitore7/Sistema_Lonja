@@ -236,6 +236,11 @@ MariaDB debe estar en ejecución. En Linux se puede revisar con `sudo systemctl 
 | `JWT_EXPIRA` | `8h` | Duración de la sesión |
 | `ADMIN_USER` | `admin` | Usuario del administrador inicial |
 | `ADMIN_PASSWORD` | mínimo 8 caracteres | Contraseña del administrador inicial |
+| `EMAIL_HOST` | `smtp.gmail.com` | Servidor SMTP para el correo de confirmación. Vacío: el enlace se imprime en la consola |
+| `EMAIL_PORT` | `587` | Puerto SMTP (465 usa conexión segura directa) |
+| `EMAIL_USER` | `tu_correo@gmail.com` | Cuenta que envía los correos |
+| `EMAIL_PASS` | contraseña de aplicación | En Gmail: verificación en 2 pasos + https://myaccount.google.com/apppasswords |
+| `EMAIL_FROM` | `"Lonja Veracruz <tu_correo@gmail.com>"` | Remitente que ve el comprador |
 
 ## Scripts disponibles
 
@@ -286,7 +291,7 @@ La base de datos tiene 6 tablas:
 - **tipo**: `id_tpo`, `nombre`. Sin cambios.
 - **comprador**: `codigo_cpr` (automático), `nombre`, `apellido_paterno`, `apellido_materno`, `direccion`, `correo`. Sin cambios (no lleva contraseña).
 - **compra**: `id_cmp`, `codigo_cpr`, `id_lte` (único: un lote se vende una sola vez), `precio_kilo_final`, `precio_total`, `fecha` (fecha real de la compra). Sin cambios.
-- **usuario**: `id_usuario`, `nombre_usuario` (único), `password` (bcrypt), `rol` (ADMINISTRADOR, EMPLEADO o COMPRADOR), `activo`, `codigo_cpr` (FK única a `comprador`; obligatoria para COMPRADOR y NULL para el personal).
+- **usuario**: `id_usuario`, `nombre_usuario` (único), `password` (bcrypt), `rol` (ADMINISTRADOR, EMPLEADO o COMPRADOR), `activo`, `confirmado` (nuevo, BOOLEAN, por defecto TRUE; las cuentas creadas en `/registro` empiezan en FALSE hasta abrir el enlace del correo), `codigo_cpr` (FK única a `comprador`; obligatoria para COMPRADOR y NULL para el personal).
 
 No se agregó ninguna tabla. La compra (`services/ventaService.js`) bloquea la fila del lote (`SELECT ... FOR UPDATE`), vuelve a comprobar que esté DISPONIBLE, publicado y con precio mayor que cero, toma el comprador de la sesión y el precio de MariaDB, crea la compra y marca el lote como VENDIDO en una sola transacción. La restricción única de `compra.id_lte` es la última barrera contra la doble venta. La publicación (`services/publicacionService.js`) solo modifica `lote`.
 
@@ -296,7 +301,7 @@ No se agregó ninguna tabla. La compra (`services/ventaService.js`) bloquea la f
    ```bash
    mariadb-dump -u TU_USUARIO -p --single-transaction lonja_veracruz_2026 > ~/respaldo_lonja.sql
    ```
-2. Ejecutar `npm run instalar`. `config/migrar.js` revisa el esquema real y solo agrega lo que falta: `lote.publicado` y `lote.precio_kilo_final`, el rol COMPRADOR y `usuario.codigo_cpr` (FK única), y una restricción CHECK que exige precio final mayor que cero en lotes publicados. Los lotes no vendidos quedan sin publicar; los vendidos quedan como históricos con el precio al que se vendieron. Nunca usa `sync({ force })` ni `sync({ alter })` y se puede ejecutar varias veces.
+2. Ejecutar `npm run instalar`. `config/migrar.js` revisa el esquema real y solo agrega lo que falta: `lote.publicado` y `lote.precio_kilo_final`, el rol COMPRADOR, `usuario.codigo_cpr` (FK única), `usuario.confirmado` (las cuentas existentes quedan confirmadas), y una restricción CHECK que exige precio final mayor que cero en lotes publicados. Los lotes no vendidos quedan sin publicar; los vendidos quedan como históricos con el precio al que se vendieron. Nunca usa `sync({ force })` ni `sync({ alter })` y se puede ejecutar varias veces.
 3. Si algo sale mal, restaurar: `mariadb -u TU_USUARIO -p lonja_veracruz_2026 < ~/respaldo_lonja.sql`.
 
 La regla «COMPRADOR con `codigo_cpr`, personal sin él» no puede ser CHECK en MariaDB porque la columna tiene una FK con `ON UPDATE CASCADE`; se valida en el modelo `Usuario` y en los controladores.
@@ -335,13 +340,14 @@ index.js       punto de entrada del servidor
 | Ruta | Descripción |
 |---|---|
 | `/login`, `POST /logout` | Inicio y cierre de sesión |
-| `/registro` | Alta de comprador (Comprador + Usuario en una transacción) |
+| `/registro` | Alta de comprador (Comprador + Usuario en una transacción); envía el correo de confirmación |
+| `/confirmar/:token`, `POST /confirmar/reenviar` | Confirmación del correo del comprador (enlace válido 24 h) y reenvío |
 | `/dashboard`, `/inventario` | Panel e inventario interno (A/E) |
 | `/lotes`, `/lotes/nuevo`, `/lotes/:id`, `/lotes/:id/editar`, `POST /lotes/:id/retirar` | Administración de lotes (A) |
 | `/tipos` | Tipos de producto (A) |
 | `/ventas/administrar`, `/ventas/nueva`, `POST /ventas/publicar`, `POST /ventas/:id/despublicar` | Gestión de ventas (A) |
-| `/catalogo`, `/catalogo/:id`, `POST /catalogo/:id/comprar` | Catálogo y compra inmediata (C) |
-| `/mis-compras`, `/mis-compras/:id` | Historial personal (C) |
+| `/catalogo`, `/catalogo/:id`, `POST /catalogo/:id/comprar` | Catálogo y compra inmediata; el comprador se queda en el catálogo para seguir comprando (C) |
+| `/mis-compras?desde=&hasta=`, `/mis-compras/pdf?desde=&hasta=`, `/mis-compras/:id` | Historial personal filtrado por fechas y reporte PDF propio (C) |
 | `/compras/historial`, `/compras/:id` | Historial interno de compras (A/E) |
 | `/compradores`, `/compradores/:codigo/...` | Gestión administrativa de compradores y sus cuentas (A) |
 | `/usuarios` | Gestión de cuentas: empleados y compradores (A) |

@@ -292,3 +292,12 @@ textarea.form-control { min-height: 80px; }
 .tarjeta-lote h3 a { color: inherit; text-decoration: none; }
 .tarjeta-lote h3 a:hover { color: var(--turquesa); }
 .galeria-especie.sin-imagen { place-items: center; font-size: 40px; }
+
+/* Aviso de compra en el catálogo (el comprador sigue en la misma página) */
+.aviso-compra { border: 1px solid #bfe5e0; border-left: 4px solid var(--turquesa); border-radius: 12px; box-shadow: 0 10px 30px rgba(9,38,83,.18); }
+.aviso-compra .toast-body { display: flex; gap: 12px; align-items: flex-start; }
+.aviso-compra .toast-body > i { font-size: 22px; color: var(--turquesa); }
+.aviso-compra.error { border-color: #f5c2c0; border-left-color: var(--peligro); }
+.aviso-compra.error .toast-body > i { color: var(--peligro); }
+.aviso-compra.error a { display: none; }
+[data-tarjeta-lote].vendida { transition: opacity .35s ease, transform .35s ease; opacity: 0; transform: scale(.96); }

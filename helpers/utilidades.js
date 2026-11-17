@@ -1,3 +1,5 @@
+import { esFechaISO } from './formatos.js';
+
 // Utilidades pequeñas y reutilizables
 export const POR_PAGINA = 10;
 
@@ -30,3 +32,19 @@ export const entero = (valor) => {
 };
 
 export const texto = (valor) => (typeof valor === 'string' ? valor.trim() : '');
+
+// Lee ?desde=&hasta= (fechas inclusive). Devuelve { desde, hasta, error }.
+// Sin fechas no hay rango; con una sola se usa la misma para ambos extremos.
+export const leerRango = (query) => {
+    const hayDesde = query.desde !== undefined && query.desde !== '';
+    const hayHasta = query.hasta !== undefined && query.hasta !== '';
+    if (!hayDesde && !hayHasta) return { desde: '', hasta: '', error: null };
+    if ((hayDesde && !esFechaISO(query.desde)) || (hayHasta && !esFechaISO(query.hasta))) {
+        return { desde: '', hasta: '', error: 'Escribe fechas válidas para generar el reporte.' };
+    }
+    const desde = hayDesde ? query.desde : query.hasta;
+    const hasta = hayHasta ? query.hasta : query.desde;
+    if (desde > hasta) return { desde, hasta, error: 'La fecha inicial no puede ser posterior a la fecha final.' };
+    return { desde, hasta, error: null };
+};
+

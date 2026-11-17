@@ -1,22 +1,7 @@
 import { jornadas, reportePeriodo } from '../services/reporteService.js';
 import { generarPdfReporte } from '../helpers/reportePdf.js';
-import { paginar, datosPaginacion } from '../helpers/utilidades.js';
+import { paginar, datosPaginacion, leerRango } from '../helpers/utilidades.js';
 import { esFechaISO, hoyISO } from '../helpers/formatos.js';
-
-// Lee ?desde=&hasta= (fechas inclusive). Devuelve { desde, hasta, error }.
-// Sin fechas no hay rango; con una sola se usa la misma para ambos extremos.
-const leerRango = (query) => {
-    const hayDesde = query.desde !== undefined && query.desde !== '';
-    const hayHasta = query.hasta !== undefined && query.hasta !== '';
-    if (!hayDesde && !hayHasta) return { desde: '', hasta: '', error: null };
-    if ((hayDesde && !esFechaISO(query.desde)) || (hayHasta && !esFechaISO(query.hasta))) {
-        return { desde: '', hasta: '', error: 'Escribe fechas válidas para generar el reporte.' };
-    }
-    const desde = hayDesde ? query.desde : query.hasta;
-    const hasta = hayHasta ? query.hasta : query.desde;
-    if (desde > hasta) return { desde, hasta, error: 'La fecha inicial no puede ser posterior a la fecha final.' };
-    return { desde, hasta, error: null };
-};
 
 // GET /reportes  -> sin rango: formulario + jornadas con ventas.  Con rango válido: el reporte.
 const reporte = async (req, res) => {

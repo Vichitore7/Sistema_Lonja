@@ -6,7 +6,7 @@ import path from 'node:path';
 import { db } from './models/index.js';
 import * as formatos from './helpers/formatos.js';
 import { mensajeExito, mensajeError } from './helpers/mensajes.js';
-import { prepararCsrf, verificarCsrfGlobal } from './middleware/seguridad.js';
+import { prepararCsrf, verificarCsrfGlobal, configurarCors, rechazarOrigenNoPermitido } from './middleware/seguridad.js';
 import { noEncontrado, manejarErrores } from './middleware/errores.js';
 
 import authRouter from './routes/authRouter.js';
@@ -34,6 +34,9 @@ app.use(helmet({
 }));
 app.disable('x-powered-by');
 
+// CORS: solo el propio sistema recibe cabeceras CORS (lista blanca)
+app.use(configurarCors);
+
 // Archivos estáticos: CSS/JS propios, Bootstrap, iconos Lucide y fuentes Poppins/Inter
 app.use(express.static('public'));
 app.use('/vendor/lucide', express.static(path.resolve('node_modules/lucide-static/font')));
@@ -58,6 +61,8 @@ app.use((req, res, next) => {
     next();
 });
 
+// POST/OPTIONS desde otros sitios se rechazan (va aquí para poder mostrar la vista de error)
+app.use(rechazarOrigenNoPermitido);
 app.use(prepararCsrf);
 app.use(verificarCsrfGlobal);
 

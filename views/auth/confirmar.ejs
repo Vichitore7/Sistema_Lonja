@@ -1,0 +1,32 @@
+<%- include('../partials/head') %>
+<main class="pagina-login" id="contenido">
+    <div class="login-caja">
+        <section class="login-marca">
+            <img src="/img/logo.svg" alt="">
+            <h1>Lonja<br>Veracruz</h1>
+            <p class="mb-0 mt-2">Cuenta de comprador</p>
+            <div class="linea"></div>
+            <ul>
+                <li><i class="icon-user-plus" aria-hidden="true"></i>Crea tu cuenta</li>
+                <li><i class="icon-mail-check" aria-hidden="true"></i>Confirma tu correo</li>
+                <li><i class="icon-shopping-cart" aria-hidden="true"></i>Compra lotes</li>
+            </ul>
+            <div class="ola" aria-hidden="true"></div>
+        </section>
+
+        <section class="login-form">
+            <h2><i class="icon-mail" aria-hidden="true"></i> Revisa tu correo</h2>
+            <% if (generico) { %>
+                <p class="subtitulo">Si la cuenta existe y todavía no está confirmada, te enviamos un nuevo enlace de confirmación.</p>
+            <% } else if (enviado) { %>
+                <div class="alert alert-success" role="status"><i class="icon-circle-check" aria-hidden="true"></i><div>Tu cuenta se creó correctamente.</div></div>
+                <p>Te enviamos un enlace de confirmación a <strong><%= correo %></strong>. Ábrelo para activar tu cuenta; vence en 24 horas.</p>
+            <% } else { %>
+                <div class="alert alert-danger" role="alert"><i class="icon-circle-alert" aria-hidden="true"></i><div>Tu cuenta se creó, pero no pudimos enviar el correo de confirmación. Inicia sesión más tarde para pedir un nuevo enlace.</div></div>
+            <% } %>
+            <p class="small texto-sec">¿No te llegó? Revisa la carpeta de spam. Al iniciar sesión podrás pedir que te lo enviemos otra vez.</p>
+            <a href="/login" class="btn btn-navy w-100 py-2 mt-3"><i class="icon-log-in" aria-hidden="true"></i>Ir a iniciar sesión</a>
+        </section>
+    </div>
+</main>
+<%- include('../partials/footer') %>

@@ -35,6 +35,11 @@ export const migrar = async (db) => {
         await db.query('ALTER TABLE usuario ADD COLUMN codigo_cpr INT NULL UNIQUE');
         console.log('Migración: columna usuario.codigo_cpr agregada');
     }
+    if (!usuario.confirmado) {
+        // Las cuentas existentes se consideran verificadas; solo los registros nuevos deben confirmar su correo
+        await db.query('ALTER TABLE usuario ADD COLUMN confirmado BOOLEAN NOT NULL DEFAULT TRUE');
+        console.log('Migración: columna usuario.confirmado agregada (las cuentas existentes quedan confirmadas)');
+    }
     const fk = await uno(db, `
         SELECT COUNT(*) AS total FROM information_schema.KEY_COLUMN_USAGE
         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usuario'

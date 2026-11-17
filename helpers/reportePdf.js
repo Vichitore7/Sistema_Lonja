@@ -15,10 +15,25 @@ const COLUMNAS = [
     { titulo: 'Fecha y hora', ancho: 112, alinear: 'right', valor: (c) => formatoFechaHora(c.fecha) }
 ];
 
-export const generarPdfReporte = ({ desde, hasta, totales, compras }, salida) => {
-    const unDia = desde === hasta;
-    const titulo = 'Reporte de compras por fechas';
-    const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 40, info: { Title: unDia ? `Reporte diario ${desde}` : `Reporte ${desde} al ${hasta}`, Author: 'Lonja Veracruz' } });
+// Columnas del reporte personal del comprador: solo el precio TOTAL (nunca precio por kilo)
+const COLUMNAS_COMPRADOR = [
+    { titulo: 'Folio', ancho: 60, valor: (c) => folio(c.id_cmp) },
+    { titulo: 'Lote', ancho: 50, valor: (c) => folio(c.id_lte) },
+    { titulo: 'Especies', ancho: 250, valor: (c) => (c.lote.especies || []).map((e) => e.nombre).join(', ') },
+    { titulo: 'Kilos', ancho: 80, alinear: 'right', valor: (c) => formatoKg(c.lote.kilos) },
+    { titulo: 'Cajas', ancho: 50, alinear: 'right', valor: (c) => String(c.lote.numero_cajas) },
+    { titulo: 'Total', ancho: 120, alinear: 'right', valor: (c) => formatoMoneda(c.precio_total) },
+    { titulo: 'Fecha y hora', ancho: 152, alinear: 'right', valor: (c) => formatoFechaHora(c.fecha) }
+];
+
+const textoPeriodo = (desde, hasta) => {
+    if (!desde) return 'Todo el historial de compras';
+    return desde === hasta ? `Fecha: ${isoATexto(desde)} (día completo)` : `Del ${isoATexto(desde)} al ${isoATexto(hasta)} (fechas inclusive)`;
+};
+
+// Dibuja encabezado, tarjetas de totales y tabla. Lo usan el reporte del personal y el del comprador.
+const dibujarReporte = (salida, { tituloDoc, titulo, lineas, tarjetas, columnas, compras, vacio }) => {
+    const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 40, info: { Title: tituloDoc, Author: 'Lonja Veracruz' } });
     doc.pipe(salida);
     const izquierda = 40;
     const anchoUtil = doc.page.width - 80;
@@ -31,31 +46,26 @@ export const generarPdfReporte = ({ desde, hasta, totales, compras }, salida) =>
     doc.fontSize(9).text(`Generado: ${formatoFechaHora(new Date())}`, izquierda, 28, { width: anchoUtil, align: 'right' });
 
     doc.fillColor(C.navy).font('Helvetica-Bold').fontSize(16).text(titulo, izquierda, 92);
-    doc.fillColor(C.secundario).font('Helvetica').fontSize(10)
-        .text(unDia ? `Fecha: ${isoATexto(desde)} (día completo)` : `Del ${isoATexto(desde)} al ${isoATexto(hasta)} (fechas inclusive)`, izquierda, 114);
+    doc.fillColor(C.secundario).font('Helvetica').fontSize(10);
+    lineas.forEach((linea, i) => doc.text(linea, izquierda, 114 + i * 14));
+    const extra = (lineas.length - 1) * 14;
 
     // Tarjetas de totales
-    const tarjetas = [
-        ['Número de compras', String(totales.compras)],
-        ['Lotes vendidos', String(totales.lotes)],
-        ['Kilos vendidos', formatoKg(totales.kilos)],
-        ['Ingresos', formatoMoneda(totales.importe)]
-    ];
-    const anchoTarjeta = (anchoUtil - 30) / 4;
+    const anchoTarjeta = (anchoUtil - (tarjetas.length - 1) * 10) / tarjetas.length;
     tarjetas.forEach(([etiqueta, valor], i) => {
         const x = izquierda + i * (anchoTarjeta + 10);
-        doc.roundedRect(x, 136, anchoTarjeta, 52, 6).fillAndStroke(i === 3 ? C.agua : '#F3F8F9', C.borde);
-        doc.fillColor(C.secundario).font('Helvetica').fontSize(9).text(etiqueta, x + 12, 145);
-        doc.fillColor(C.navy).font('Helvetica-Bold').fontSize(15).text(valor, x + 12, 161);
+        doc.roundedRect(x, 136 + extra, anchoTarjeta, 52, 6).fillAndStroke(i === tarjetas.length - 1 ? C.agua : '#F3F8F9', C.borde);
+        doc.fillColor(C.secundario).font('Helvetica').fontSize(9).text(etiqueta, x + 12, 145 + extra);
+        doc.fillColor(C.navy).font('Helvetica-Bold').fontSize(15).text(valor, x + 12, 161 + extra);
     });
 
     // Tabla
-    let y = 208;
+    let y = 208 + extra;
     const encabezado = () => {
         doc.rect(izquierda, y, anchoUtil, 22).fill(C.navy);
         let x = izquierda;
         doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(9);
-        for (const col of COLUMNAS) {
+        for (const col of columnas) {
             doc.text(col.titulo, x + 6, y + 7, { width: col.ancho - 12, align: col.alinear || 'left' });
             x += col.ancho;
         }
@@ -64,8 +74,7 @@ export const generarPdfReporte = ({ desde, hasta, totales, compras }, salida) =>
     encabezado();
 
     if (compras.length === 0) {
-        doc.fillColor(C.secundario).font('Helvetica').fontSize(11)
-            .text(`No se registraron compras ${unDia ? 'en esta fecha' : 'en este periodo'}. Los totales se muestran en cero.`, izquierda, y + 16, { width: anchoUtil, align: 'center' });
+        doc.fillColor(C.secundario).font('Helvetica').fontSize(11).text(vacio, izquierda, y + 16, { width: anchoUtil, align: 'center' });
     }
 
     compras.forEach((compra, i) => {
@@ -77,7 +86,7 @@ export const generarPdfReporte = ({ desde, hasta, totales, compras }, salida) =>
         if (i % 2 === 1) doc.rect(izquierda, y, anchoUtil, 20).fill('#F3F8F9');
         let x = izquierda;
         doc.fillColor(C.texto).font('Helvetica').fontSize(9);
-        for (const col of COLUMNAS) {
+        for (const col of columnas) {
             doc.text(col.valor(compra), x + 6, y + 6, { width: col.ancho - 12, align: col.alinear || 'left', lineBreak: false, ellipsis: true });
             x += col.ancho;
         }
@@ -86,4 +95,40 @@ export const generarPdfReporte = ({ desde, hasta, totales, compras }, salida) =>
     });
 
     doc.end();
+};
+
+// Reporte del personal (todas las compras del periodo)
+export const generarPdfReporte = ({ desde, hasta, totales, compras }, salida) => {
+    const unDia = desde === hasta;
+    dibujarReporte(salida, {
+        tituloDoc: unDia ? `Reporte diario ${desde}` : `Reporte ${desde} al ${hasta}`,
+        titulo: 'Reporte de compras por fechas',
+        lineas: [textoPeriodo(desde, hasta)],
+        tarjetas: [
+            ['Número de compras', String(totales.compras)],
+            ['Lotes vendidos', String(totales.lotes)],
+            ['Kilos vendidos', formatoKg(totales.kilos)],
+            ['Ingresos', formatoMoneda(totales.importe)]
+        ],
+        columnas: COLUMNAS,
+        compras,
+        vacio: `No se registraron compras ${unDia ? 'en esta fecha' : 'en este periodo'}. Los totales se muestran en cero.`
+    });
+};
+
+// Reporte personal del comprador (solo sus compras; desde/hasta vacíos = todo el historial)
+export const generarPdfComprador = ({ desde, hasta, totales, compras }, salida, comprador = null) => {
+    dibujarReporte(salida, {
+        tituloDoc: desde ? `Mis compras ${desde} al ${hasta}` : 'Mis compras',
+        titulo: 'Reporte de mis compras',
+        lineas: [textoPeriodo(desde, hasta), ...(comprador ? [`Comprador ${folio(comprador.codigo_cpr)}: ${nombreCompleto(comprador)}`] : [])],
+        tarjetas: [
+            ['Lotes comprados', String(totales.compras)],
+            ['Kilos comprados', formatoKg(totales.kilos)],
+            ['Total gastado', formatoMoneda(totales.importe)]
+        ],
+        columnas: COLUMNAS_COMPRADOR,
+        compras,
+        vacio: desde ? 'No hiciste compras en este periodo. Los totales se muestran en cero.' : 'Todavía no has comprado ningún lote.'
+    });
 };

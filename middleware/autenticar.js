@@ -17,7 +17,7 @@ const autenticar = async (req, res, next) => {
         const { id } = verificarJWT(token);
         const usuario = await Usuario.findByPk(id);
         // Una cuenta COMPRADOR sin comprador ligado no puede operar
-        if (!usuario || !usuario.activo || (usuario.rol === 'COMPRADOR' && !usuario.codigo_cpr)) {
+        if (!usuario || !usuario.activo || !usuario.confirmado || (usuario.rol === 'COMPRADOR' && !usuario.codigo_cpr)) {
             res.clearCookie('_token');
             return res.redirect('/login');
         }

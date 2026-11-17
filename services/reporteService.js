@@ -98,3 +98,41 @@ export const indicadoresDashboard = async () => {
     ]);
     return { lotesDisponibles, comprasHoy: totales.compras, ingresosHoy: totales.importe, ultimasCompras };
 };
+
+// ---------- Reporte personal del comprador ----------
+// Filtro de compras de UN comprador, opcionalmente dentro de un rango de fechas (inclusive)
+export const filtroComprasComprador = (codigo_cpr, { desde, hasta } = {}) => {
+    const where = { codigo_cpr };
+    if (desde && hasta) {
+        const { inicio, fin } = limitesRango(desde, hasta);
+        where.fecha = { [Op.gte]: inicio, [Op.lt]: fin };
+    }
+    return where;
+};
+
+// Totales del comprador: número de compras, kilos comprados y total gastado
+export const totalesComprador = async (codigo_cpr, rango = {}) => {
+    const compras = await Compra.findAll({
+        where: filtroComprasComprador(codigo_cpr, rango),
+        include: [{ model: Lote, as: 'lote', attributes: ['kilos'] }],
+        attributes: ['id_cmp', 'precio_total']
+    });
+    return {
+        compras: compras.length,
+        kilos: compras.reduce((suma, c) => suma + Number(c.lote.kilos), 0),
+        importe: compras.reduce((suma, c) => suma + Number(c.precio_total), 0)
+    };
+};
+
+// Todas las compras del comprador en el rango (para el PDF), con las especies de cada lote
+export const reporteComprador = async (codigo_cpr, rango = {}) => {
+    const [totales, compras] = await Promise.all([
+        totalesComprador(codigo_cpr, rango),
+        Compra.findAll({
+            where: filtroComprasComprador(codigo_cpr, rango),
+            include: [{ model: Lote, as: 'lote', include: [{ association: 'especies' }] }],
+            order: [['fecha', 'ASC'], ['id_cmp', 'ASC']]
+        })
+    ]);
+    return { ...rango, totales, compras };
+};

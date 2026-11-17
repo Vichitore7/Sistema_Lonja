@@ -30,3 +30,16 @@ export const opcionesCookie = () => ({
     secure: process.env.NODE_ENV === 'production',
     maxAge: 8 * 60 * 60 * 1000
 });
+
+// Token del enlace de confirmación de correo. No depende de la ejecución del servidor
+// (el enlace sigue sirviendo aunque se reinicie) y solo vale para confirmar esa cuenta.
+const PROPOSITO_CONFIRMAR = 'confirmar-correo';
+
+export const generarTokenConfirmacion = (id_usuario) =>
+    jwt.sign({ id: id_usuario, proposito: PROPOSITO_CONFIRMAR }, process.env.SC_JWT, { expiresIn: '24h' });
+
+export const verificarTokenConfirmacion = (token) => {
+    const datos = jwt.verify(token, process.env.SC_JWT);
+    if (datos.proposito !== PROPOSITO_CONFIRMAR) throw new Error('Token no válido para confirmar la cuenta');
+    return datos;
+};

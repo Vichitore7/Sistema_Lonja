@@ -12,7 +12,9 @@ const Usuario = db.define('usuario', {
     nombre_usuario: { type: DataTypes.STRING(50), allowNull: false, unique: true },
     password: { type: DataTypes.STRING(255), allowNull: false },
     rol: { type: DataTypes.ENUM(...ROLES), allowNull: false, defaultValue: 'EMPLEADO' },
-    activo: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true }
+    activo: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    // Correo verificado. Solo las cuentas creadas en /registro empiezan sin confirmar
+    confirmado: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true }
 }, {
     hooks: {
         beforeCreate: async (usuario) => {

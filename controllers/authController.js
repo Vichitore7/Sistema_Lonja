@@ -2,7 +2,8 @@ import { UniqueConstraintError } from 'sequelize';
 import { db, Usuario, Comprador } from '../models/index.js';
 import { obtenerErrores } from '../middleware/validar.js';
 import { registrarIntentoFallido, limpiarIntentos } from '../middleware/seguridad.js';
-import { generarJWT, verificarJWT, opcionesCookie } from '../helpers/tokens.js';
+import { generarJWT, verificarJWT, opcionesCookie, generarTokenConfirmacion, verificarTokenConfirmacion } from '../helpers/tokens.js';
+import { enviarCorreoConfirmacion } from '../helpers/correos.js';
 import { texto } from '../helpers/utilidades.js';
 
 // Pantalla de inicio de cada rol
@@ -14,7 +15,7 @@ const usuarioDeSesion = async (req) => {
         if (!req.cookies?._token) return null;
         const { id } = verificarJWT(req.cookies._token);
         const usuario = await Usuario.findByPk(id);
-        return usuario?.activo ? usuario : null;
+        return usuario?.activo && usuario.confirmado ? usuario : null;
     } catch { return null; }
 };
 
@@ -28,13 +29,14 @@ const inicio = async (req, res) => {
 const formularioLogin = async (req, res) => {
     const usuario = await usuarioDeSesion(req);
     if (usuario) return res.redirect(rutaInicio(usuario.rol));
-    res.render('auth/login', { pagina: 'Iniciar sesión', error: null, datos: {} });
+    res.render('auth/login', { pagina: 'Iniciar sesión', error: null, datos: {}, reenviar: false });
 };
 
 // POST /login (personal y compradores usan el mismo formulario)
 const login = async (req, res) => {
     const datos = { nombre_usuario: req.body.nombre_usuario?.trim() || '' };
-    const mostrarError = (status, error) => res.status(status).render('auth/login', { pagina: 'Iniciar sesión', error, datos });
+    const mostrarError = (status, error, reenviar = false) =>
+        res.status(status).render('auth/login', { pagina: 'Iniciar sesión', error, datos, reenviar });
 
     if (obtenerErrores(req)) return mostrarError(400, 'Escribe tu usuario y contraseña.');
 
@@ -46,6 +48,10 @@ const login = async (req, res) => {
     }
 
     limpiarIntentos(req);
+    // Cuenta de comprador que todavía no confirma su correo: no entra hasta abrir el enlace
+    if (!usuario.confirmado) {
+        return mostrarError(403, 'Tu cuenta todavía no está confirmada. Abre el enlace que te enviamos por correo.', true);
+    }
     res.cookie('_token', generarJWT(usuario.id_usuario), opcionesCookie());
     return res.redirect(rutaInicio(usuario.rol));
 };
@@ -85,8 +91,66 @@ const registrar = async (req, res) => {
         throw error;
     }
 
-    res.cookie('_token', generarJWT(usuario.id_usuario), opcionesCookie());
-    res.redirect('/catalogo?msg=cuenta-creada');
+    // La cuenta queda sin confirmar: no se inicia sesión hasta que el comprador abra el enlace del correo
+    const enviado = await enviarConfirmacion(usuario, datos);
+    renderPendiente(res, { correo: datos.correo, enviado, status: 201 });
+};
+
+// Envía (o reenvía) el correo de confirmación. Devuelve false si el servidor de correo falló.
+const enviarConfirmacion = async (usuario, comprador) => {
+    try {
+        await enviarCorreoConfirmacion({
+            correo: comprador.correo,
+            nombre: comprador.nombre,
+            nombre_usuario: usuario.nombre_usuario,
+            token: generarTokenConfirmacion(usuario.id_usuario)
+        });
+        return true;
+    } catch (error) {
+        console.error('No se pudo enviar el correo de confirmación:', error.message);
+        return false;
+    }
+};
+
+// Correo parcialmente oculto: ana.lopez@gmail.com -> an•••••••@gmail.com
+const ocultarCorreo = (correo = '') => {
+    const [nombre, dominio] = correo.split('@');
+    if (!dominio) return '';
+    return `${nombre.slice(0, 2)}${'•'.repeat(Math.max(nombre.length - 2, 3))}@${dominio}`;
+};
+
+const renderPendiente = (res, { correo = '', enviado = true, generico = false, status = 200 }) =>
+    res.status(status).render('auth/confirmar', {
+        pagina: 'Confirma tu correo', correo: ocultarCorreo(correo), enviado, generico
+    });
+
+// GET /confirmar/:token  -> marca la cuenta como confirmada (enlace del correo)
+const confirmarCuenta = async (req, res) => {
+    let id;
+    try {
+        ({ id } = verificarTokenConfirmacion(req.params.token));
+    } catch {
+        return res.status(400).render('auth/login', {
+            pagina: 'Iniciar sesión', datos: {}, reenviar: false,
+            error: 'El enlace de confirmación no es válido o ya venció. Inicia sesión para pedir uno nuevo.'
+        });
+    }
+    const usuario = await Usuario.findByPk(id);
+    if (!usuario) return res.redirect('/login');
+    if (!usuario.confirmado) await usuario.update({ confirmado: true });
+    res.redirect('/login?msg=cuenta-confirmada');
+};
+
+// POST /confirmar/reenviar  -> vuelve a mandar el enlace. La respuesta es siempre la misma
+// (no revela si el usuario existe o si ya estaba confirmado).
+const reenviarConfirmacion = async (req, res) => {
+    const nombre_usuario = texto(req.body.nombre_usuario).slice(0, 50);
+    const usuario = nombre_usuario && await Usuario.findOne({
+        where: { nombre_usuario, rol: 'COMPRADOR', confirmado: false },
+        include: [{ model: Comprador, as: 'comprador' }]
+    });
+    if (usuario?.comprador?.correo) await enviarConfirmacion(usuario, usuario.comprador);
+    renderPendiente(res, { generico: true });
 };
 
 const crearCompradorConCuenta = (datos, password) => db.transaction(async (t) => {
@@ -103,6 +167,7 @@ const crearCompradorConCuenta = (datos, password) => db.transaction(async (t) =>
         password,
         rol: 'COMPRADOR',
         activo: true,
+        confirmado: false,
         codigo_cpr: comprador.codigo_cpr
     }, { transaction: t });
 });
@@ -113,4 +178,4 @@ const logout = (req, res) => {
     res.redirect('/login?msg=sesion-cerrada');
 };
 
-export { inicio, formularioLogin, login, formularioRegistro, registrar, logout };
+export { inicio, formularioLogin, login, formularioRegistro, registrar, confirmarCuenta, reenviarConfirmacion, logout };
