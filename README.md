@@ -4,6 +4,19 @@ Aplicación web para administrar la venta de producto del mar en una lonja. Perm
 
 Versión 2.0: sigue el «Manual integral actualizado» del 12/11/2026 (cuentas de compradores y ventas en línea).
 
+El sistema está dividido en **dos proyectos** de Node.js que trabajan juntos, como en las prácticas «REST API con WebToken» y «REST API Cliente»:
+
+| Carpeta | Proyecto | Puerto | Qué hace |
+|---|---|---|---|
+| `lonja-api/` | **Lonja API** | 2900 | REST API. Se conecta a MariaDB con Sequelize, hace el login con JSON Web Token y **solo responde JSON** (y los PDF de los reportes). No tiene vistas. |
+| `lonja-cliente/` | **Lonja Cliente** | 3000 | Las pantallas (EJS, CSS, JS). **No se conecta a la base de datos**: todo lo pide a la API con `fetch` y el token. |
+
+```
+Navegador  ──>  lonja-cliente (3000, EJS)  ──fetch + Authorization: Bearer <token>──>  lonja-api (2900, JSON)  ──>  MariaDB
+```
+
+Al iniciar sesión, el cliente manda usuario y contraseña a `POST /api/auth/login`; la API responde con un JWT que el cliente guarda en una cookie HttpOnly y envía en cada petición. **Para usar el sistema hay que tener los dos proyectos encendidos al mismo tiempo.**
+
 Proyecto de la materia Programación Web 2.
 
 Autores:
@@ -26,8 +39,10 @@ Autores:
 11. [Estructura del proyecto](#estructura-del-proyecto)
 12. [Seguridad](#seguridad)
 13. [Rutas principales](#rutas-principales)
-14. [Flujo de trabajo con Git](#flujo-de-trabajo-con-git)
-15. [Licencia](#licencia)
+14. [Endpoints de la API](#endpoints-de-la-api)
+15. [Entrega (archivo comprimido)](#entrega-archivo-comprimido)
+16. [Flujo de trabajo con Git](#flujo-de-trabajo-con-git)
+17. [Licencia](#licencia)
 
 ## Qué hace el sistema
 
@@ -57,13 +72,22 @@ Ejemplo: 100 kg, precio de salida $80/kg y precio final $120/kg → valor de sal
 
 ## Tecnologías
 
-- Node.js 20 y Express 5
-- EJS (plantillas del lado del servidor)
+**Lonja API** (`lonja-api/`)
+
+- Node.js 20 y Express 5 (respuestas JSON)
 - MariaDB con Sequelize (ORM)
+- jsonwebtoken (JWT en el encabezado `Authorization: Bearer`) y bcryptjs (contraseñas)
+- express-validator, multer (subida de imágenes), PDFKit (reportes PDF), nodemailer (correo de confirmación)
+- helmet (cabeceras seguras) y cors (lista blanca de orígenes)
+
+**Lonja Cliente** (`lonja-cliente/`)
+
+- Node.js 20 y Express 5 con EJS (plantillas del lado del servidor)
+- `fetch` nativo de Node para llamar a la API, cookie-parser (token en cookie HttpOnly), multer (reenvía las imágenes a la API)
 - Bootstrap 5, iconos Lucide y fuentes Poppins e Inter, todo servido localmente
-- bcryptjs (contraseñas) y jsonwebtoken (sesión en cookie HttpOnly)
-- express-validator, multer (subida de imágenes), PDFKit (reportes PDF), helmet (cabeceras seguras)
-- nodemon (recarga automática en desarrollo)
+- helmet (cabeceras seguras)
+
+En los dos: nodemon (recarga automática en desarrollo).
 
 ## Requisitos previos
 
@@ -118,13 +142,17 @@ git clone https://github.com/Vichitore7/Sistema_Lonja.git
 cd Sistema_Lonja
 ```
 
-### 2. Instalar las dependencias
+### 2. Instalar las dependencias (en los dos proyectos)
 
 ```bash
+cd lonja-api
 npm install
+cd ../lonja-cliente
+npm install
+cd ..
 ```
 
-Esto crea la carpeta `node_modules`, que no se sube al repositorio.
+Esto crea una carpeta `node_modules` en cada proyecto; no se sube al repositorio.
 
 ### 3. Crear la base de datos y un usuario de MariaDB
 
@@ -147,16 +175,20 @@ EXIT;
 
 Si el usuario de MariaDB tiene permiso para crear bases de datos, el paso 5 crea la base automáticamente; aun así, hacerlo manualmente evita problemas de permisos.
 
-### 4. Configurar el archivo `.env`
+### 4. Configurar los archivos `.env`
 
-Copiar la plantilla:
+Cada proyecto tiene su propio `.env`. Copiar las plantillas:
 
 ```bash
-cp .env.example .env        # Linux o macOS
-copy .env.example .env      # Windows (cmd)
+cp lonja-api/.env.example lonja-api/.env              # Linux o macOS
+cp lonja-cliente/.env.example lonja-cliente/.env
+copy lonja-api\.env.example lonja-api\.env            # Windows (cmd)
+copy lonja-cliente\.env.example lonja-cliente\.env
 ```
 
-Abrir `.env` con un editor y llenar los datos. Como mínimo hay que cambiar:
+El `.env` del cliente ya funciona tal cual (puerto 3000 y la API en `http://localhost:2900/api`).
+
+Abrir `lonja-api/.env` con un editor y llenar los datos. Como mínimo hay que cambiar:
 
 - `BD_USUARIO` y `BD_CLAVE`: el usuario y la contraseña creados en el paso 3.
 - `SC_JWT`: una cadena larga y aleatoria. Se puede generar con:
@@ -165,11 +197,14 @@ Abrir `.env` con un editor y llenar los datos. Como mínimo hay que cambiar:
   ```
 - `ADMIN_USER` y `ADMIN_PASSWORD`: el usuario y la contraseña del administrador inicial. La contraseña debe tener al menos 8 caracteres.
 
-El archivo `.env` contiene contraseñas y nunca se sube a GitHub (está en `.gitignore`).
+Los archivos `.env` contienen contraseñas y nunca se suben a GitHub (están en `.gitignore`).
 
 ### 5. Instalar la base de datos
 
+Los pasos 5 y 6 se ejecutan **dentro de `lonja-api`** (es el único proyecto que se conecta a MariaDB):
+
 ```bash
+cd lonja-api
 npm run instalar
 ```
 
@@ -196,16 +231,25 @@ npm run datos:historicos
 
 Agrega 15 lotes registrados entre el 01/10/2026 y el 11/11/2026: 11 vendidos en distintos días (uno a las 23:50, para probar el límite del rango), 2 a la venta, 1 sin publicar y 1 retirado. También agrega 4 compradores con cuenta (`comprador_hist1` a `comprador_hist4`, contraseña `comprador123`). Se puede ejecutar sobre una base que ya tiene datos: no modifica ni borra nada y solo se carga una vez.
 
-### 7. Iniciar el servidor
+### 7. Iniciar los dos proyectos
+
+Se necesitan **dos terminales**, una para cada proyecto:
 
 ```bash
-npm run server     # desarrollo: se reinicia solo al guardar cambios
-npm start          # producción o uso normal
+# Terminal 1: la API
+cd lonja-api
+npm run server     # desarrollo: se reinicia solo al guardar cambios (npm start para uso normal)
 ```
 
-Abrir en el navegador http://localhost:2800 e iniciar sesión con el administrador del paso 4.
+```bash
+# Terminal 2: el cliente
+cd lonja-cliente
+npm run server
+```
 
-Si en la terminal aparece `Conexión a MariaDB correcta`, todo quedó funcionando.
+Abrir en el navegador http://localhost:3000 e iniciar sesión con el administrador del paso 4.
+
+Si en la terminal de la API aparece `Conexión a MariaDB correcta` y en la del cliente `Lonja Cliente en http://localhost:3000`, todo quedó funcionando. En http://localhost:2900/api la API muestra la lista de sus endpoints.
 
 ## Uso diario
 
@@ -213,14 +257,17 @@ Una vez instalado, para volver a trabajar solo hace falta:
 
 ```bash
 cd Sistema_Lonja
-git pull           # traer los últimos cambios
-npm install        # solo si cambió package.json
-npm run server
+git pull                      # traer los últimos cambios
+# solo si cambió algún package.json:  (cd lonja-api && npm install) ; (cd lonja-cliente && npm install)
+cd lonja-api && npm run server          # terminal 1
+cd lonja-cliente && npm run server      # terminal 2
 ```
 
 MariaDB debe estar en ejecución. En Linux se puede revisar con `sudo systemctl status mariadb`.
 
 ## Variables de entorno
+
+### `lonja-api/.env`
 
 | Variable | Ejemplo | Descripción |
 |---|---|---|
@@ -230,9 +277,9 @@ MariaDB debe estar en ejecución. En Linux se puede revisar con `sudo systemctl 
 | `BD_DIALEC` | `mariadb` | Motor de base de datos para Sequelize |
 | `BD_HOST` | `127.0.0.1` | Servidor de MariaDB |
 | `BD_PORT` | `3306` | Puerto de MariaDB |
-| `URL_BACKEND` | `http://localhost` | URL base que se muestra al iniciar |
-| `PORT_BACKEND` | `2800` | Puerto del servidor web |
-| `SC_JWT` | cadena aleatoria larga | Clave para firmar las sesiones |
+| `PORT_API` | `2900` | Puerto de la API |
+| `URL_CLIENTE` | `http://localhost:3000` | Dirección del cliente: el enlace del correo de confirmación abre esta página. También es el origen permitido en CORS |
+| `SC_JWT` | cadena aleatoria larga | Clave para firmar los JSON Web Token |
 | `JWT_EXPIRA` | `8h` | Duración de la sesión |
 | `ADMIN_USER` | `admin` | Usuario del administrador inicial |
 | `ADMIN_PASSWORD` | mínimo 8 caracteres | Contraseña del administrador inicial |
@@ -241,16 +288,34 @@ MariaDB debe estar en ejecución. En Linux se puede revisar con `sudo systemctl 
 | `EMAIL_USER` | `tu_correo@gmail.com` | Cuenta que envía los correos |
 | `EMAIL_PASS` | contraseña de aplicación | En Gmail: verificación en 2 pasos + https://myaccount.google.com/apppasswords |
 | `EMAIL_FROM` | `"Lonja Veracruz <tu_correo@gmail.com>"` | Remitente que ve el comprador |
+| `CORS_ORIGENES` | vacío | Orígenes extra permitidos en CORS, separados por comas (opcional) |
+
+### `lonja-cliente/.env`
+
+| Variable | Ejemplo | Descripción |
+|---|---|---|
+| `PORT_CLIENTE` | `3000` | Puerto del cliente (las pantallas) |
+| `API_URL` | `http://localhost:2900/api` | Dirección de la Lonja API |
+| `CORS_ORIGENES` | vacío | Orígenes extra que pueden enviar formularios, separados por comas (opcional) |
 
 ## Scripts disponibles
+
+En `lonja-api`:
 
 | Comando | Qué hace |
 |---|---|
 | `npm run instalar` | Crea la base de datos, las tablas y el administrador inicial |
 | `npm run datos:prueba` | Inserta datos de ejemplo si no hay lotes |
 | `npm run datos:historicos` | Agrega lotes y compras con fechas pasadas (octubre y noviembre de 2026) |
-| `npm run server` | Inicia el servidor con nodemon (desarrollo) |
-| `npm start` | Inicia el servidor con node |
+| `npm run server` | Inicia la API con nodemon (desarrollo) |
+| `npm start` | Inicia la API con node |
+
+En `lonja-cliente`:
+
+| Comando | Qué hace |
+|---|---|
+| `npm run server` | Inicia el cliente con nodemon (desarrollo) |
+| `npm start` | Inicia el cliente con node |
 
 ## Solución de problemas
 
@@ -261,8 +326,10 @@ MariaDB debe estar en ejecución. En Linux se puede revisar con `sudo systemctl 
 | `Access denied ... to database` al ejecutar `npm run instalar` | El usuario no puede crear bases de datos. Crear la base manualmente como en el paso 3. |
 | `BD_NOMBRE inválido en .env` | El nombre de la base contiene espacios o caracteres especiales. |
 | `Define ADMIN_USER y ADMIN_PASSWORD` | Faltan esos datos en `.env` o la contraseña tiene menos de 8 caracteres. |
-| `EADDRINUSE` | El puerto 2800 ya está ocupado. Cerrar el otro proceso o cambiar `PORT_BACKEND`. |
-| No se puede iniciar sesión tras varios intentos | Se bloquea por 15 minutos después de 5 intentos fallidos. Esperar o reiniciar el servidor. |
+| `EADDRINUSE` | El puerto 2900 (API) o 3000 (cliente) ya está ocupado. Cerrar el otro proceso o cambiar `PORT_API` / `PORT_CLIENTE`. |
+| Pantalla «No hay conexión con la API» | La API está apagada o `API_URL` del cliente es incorrecta. Encender la API con `npm run server` dentro de `lonja-api`. |
+| Después de reiniciar la API vuelve a pedir el inicio de sesión | Es normal: los tokens se invalidan cuando la API se reinicia. |
+| No se puede iniciar sesión tras varios intentos | Se bloquea por 15 minutos después de 5 intentos fallidos. Esperar o reiniciar la API. |
 | Error de sintaxis al iniciar | La versión de Node.js es menor a 20. Revisar con `node -v`. |
 
 ## Roles y permisos
@@ -280,7 +347,7 @@ MariaDB debe estar en ejecución. En Linux se puede revisar con `sudo systemctl 
 | Historial interno de compras y reportes PDF | Sí | Sí | No |
 | Administrar empleados y compradores | Sí | No | No |
 
-Si alguien intenta entrar a un módulo que no le corresponde, el sistema responde con una pantalla de acceso denegado (403). La captura manual de compras del sistema anterior (`/compras/nueva`) se retiró: las compras solo se crean cuando un comprador adquiere un lote publicado, así nadie puede saltarse el precio final fijado por el administrador.
+Si alguien intenta entrar a un módulo que no le corresponde, el cliente muestra una pantalla de acceso denegado (403). El permiso real lo decide la API: aunque alguien llame a la API directamente con su token, recibe `403` si su rol no tiene acceso. La captura manual de compras del sistema anterior (`/compras/nueva`) se retiró: las compras solo se crean cuando un comprador adquiere un lote publicado, así nadie puede saltarse el precio final fijado por el administrador.
 
 ## Modelo de datos
 
@@ -293,7 +360,7 @@ La base de datos tiene 6 tablas:
 - **compra**: `id_cmp`, `codigo_cpr`, `id_lte` (único: un lote se vende una sola vez), `precio_kilo_final`, `precio_total`, `fecha` (fecha real de la compra). Sin cambios.
 - **usuario**: `id_usuario`, `nombre_usuario` (único), `password` (bcrypt), `rol` (ADMINISTRADOR, EMPLEADO o COMPRADOR), `activo`, `confirmado` (nuevo, BOOLEAN, por defecto TRUE; las cuentas creadas en `/registro` empiezan en FALSE hasta abrir el enlace del correo), `codigo_cpr` (FK única a `comprador`; obligatoria para COMPRADOR y NULL para el personal).
 
-No se agregó ninguna tabla. La compra (`services/ventaService.js`) bloquea la fila del lote (`SELECT ... FOR UPDATE`), vuelve a comprobar que esté DISPONIBLE, publicado y con precio mayor que cero, toma el comprador de la sesión y el precio de MariaDB, crea la compra y marca el lote como VENDIDO en una sola transacción. La restricción única de `compra.id_lte` es la última barrera contra la doble venta. La publicación (`services/publicacionService.js`) solo modifica `lote`.
+No se agregó ninguna tabla. La compra (`services/ventaService.js`) bloquea la fila del lote (`SELECT ... FOR UPDATE`), vuelve a comprobar que esté DISPONIBLE, publicado y con precio mayor que cero, toma el comprador de la sesión y el precio de MariaDB, crea la compra y marca el lote como VENDIDO en una sola transacción. La restricción única de `compra.id_lte` es la última barrera contra la doble venta. La publicación (`services/publicacionService.js`) solo modifica `lote`. (Las rutas de esta sección son de `lonja-api/`.)
 
 ### Migrar una base existente
 
@@ -301,7 +368,7 @@ No se agregó ninguna tabla. La compra (`services/ventaService.js`) bloquea la f
    ```bash
    mariadb-dump -u TU_USUARIO -p --single-transaction lonja_veracruz_2026 > ~/respaldo_lonja.sql
    ```
-2. Ejecutar `npm run instalar`. `config/migrar.js` revisa el esquema real y solo agrega lo que falta: `lote.publicado` y `lote.precio_kilo_final`, el rol COMPRADOR, `usuario.codigo_cpr` (FK única), `usuario.confirmado` (las cuentas existentes quedan confirmadas), y una restricción CHECK que exige precio final mayor que cero en lotes publicados. Los lotes no vendidos quedan sin publicar; los vendidos quedan como históricos con el precio al que se vendieron. Nunca usa `sync({ force })` ni `sync({ alter })` y se puede ejecutar varias veces.
+2. Ejecutar `npm run instalar` dentro de `lonja-api`. `config/migrar.js` revisa el esquema real y solo agrega lo que falta: `lote.publicado` y `lote.precio_kilo_final`, el rol COMPRADOR, `usuario.codigo_cpr` (FK única), `usuario.confirmado` (las cuentas existentes quedan confirmadas), y una restricción CHECK que exige precio final mayor que cero en lotes publicados. Los lotes no vendidos quedan sin publicar; los vendidos quedan como históricos con el precio al que se vendieron. Nunca usa `sync({ force })` ni `sync({ alter })` y se puede ejecutar varias veces.
 3. Si algo sale mal, restaurar: `mariadb -u TU_USUARIO -p lonja_veracruz_2026 < ~/respaldo_lonja.sql`.
 
 La regla «COMPRADOR con `codigo_cpr`, personal sin él» no puede ser CHECK en MariaDB porque la columna tiene una FK con `ON UPDATE CASCADE`; se valida en el modelo `Usuario` y en los controladores.
@@ -309,33 +376,54 @@ La regla «COMPRADOR con `codigo_cpr`, personal sin él» no puede ser CHECK en 
 ## Estructura del proyecto
 
 ```
-config/        db.js (conexión), instalar.js, migrar.js, datosPrueba.js, datosHistoricos.js
-controllers/   lógica de cada módulo: auth, dashboard, inventario, lote, tipo,
-               comprador, compra, reporte, usuario, publicacion, catalogo, misCompras
-models/        modelos de Sequelize y sus relaciones (index.js)
-routes/        rutas de Express de cada módulo
-middleware/    autenticar, autorizarRol, validar, errores, seguridad (CSRF y límites de login, registro y compra)
-services/      ventaService (compra), publicacionService, reporteService, loteService
-helpers/       formatos, mensajes, utilidades, tokens, imagenes, reportePdf
-views/         plantillas EJS por módulo y partials compartidos
-public/        css, js, img, vendor/bootstrap, uploads/especies (imágenes subidas)
-index.js       punto de entrada del servidor
+Sistema_Lonja/
+├── lonja-api/                 PROYECTO 1: REST API (puerto 2900)
+│   ├── config/                db.js (conexión), instalar.js, migrar.js, datosPrueba.js, datosHistoricos.js
+│   ├── controllers/           lógica de cada recurso; responden JSON
+│   ├── models/                modelos de Sequelize y sus relaciones (index.js)
+│   ├── routes/                rutas /api/... de cada recurso
+│   ├── middleware/            autenticar (requireAuth con Bearer), autorizarRol, validar, errores,
+│   │                          seguridad (CORS y límites de login, registro y compra)
+│   ├── services/              ventaService (compra), publicacionService, reporteService, loteService
+│   ├── helpers/               tokens (JWT), correos, imagenes, reportePdf, formatos, utilidades
+│   ├── uploads/especies/      imágenes subidas de las especies
+│   ├── .env.example
+│   ├── package.json
+│   └── index.js               punto de entrada de la API
+│
+├── lonja-cliente/             PROYECTO 2: cliente (puerto 3000)
+│   ├── controllers/           cada pantalla: pide los datos a la API y muestra la vista
+│   ├── routes/                rutas de las pantallas (/login, /lotes, /catalogo, ...)
+│   ├── middleware/            sesion (token en cookie y guard por rol), seguridad (CSRF y origen), errores
+│   ├── helpers/               api.js (helper fetch con el JWT), formatos, mensajes, utilidades
+│   ├── views/                 plantillas EJS por módulo y partials compartidos
+│   ├── public/                css, js, img, vendor/bootstrap
+│   ├── .env.example
+│   ├── package.json
+│   └── index.js               punto de entrada del cliente
+│
+├── README.md
+└── LICENSE
 ```
 
 ## Seguridad
 
-- Sesión con JWT en cookie HttpOnly (`SameSite=Lax`, `Secure` en producción). En cada petición se vuelve a consultar al usuario, así que una cuenta desactivada pierde el acceso (y la posibilidad de comprar) de inmediato. Las sesiones se invalidan al reiniciar el servidor.
-- Roles verificados en el servidor.
-- Token CSRF en todos los formularios.
+- **JSON Web Token**: la API firma el token al iniciar sesión (`POST /api/auth/login`) y lo exige en el encabezado `Authorization: Bearer <token>` en todas las rutas privadas (`middleware/autenticar.js`). `jwt.verify()` valida la firma y la expiración. En cada petición se vuelve a consultar al usuario, así que una cuenta desactivada pierde el acceso (y la posibilidad de comprar) de inmediato. Los tokens se invalidan al reiniciar la API.
+- El cliente guarda el token en una cookie HttpOnly (`SameSite=Lax`, `Secure` en producción), así el JavaScript del navegador no lo puede leer.
+- Roles verificados en la API (el cliente solo oculta menús y botones).
+- Token CSRF en todos los formularios del cliente y rechazo de formularios enviados desde otros sitios.
+- CORS en la API con lista blanca (`URL_CLIENTE` y `CORS_ORIGENES`).
 - Límite de 5 intentos de inicio de sesión cada 15 minutos (mensaje genérico), de 10 registros por equipo cada 15 minutos y de 20 intentos de compra por cuenta cada minuto.
-- La compra nunca confía en `codigo_cpr`, `precio_kilo_final` ni `precio_total` enviados por el navegador; el detalle `/mis-compras/:id` comprueba la pertenencia (IDOR).
-- Las vistas del comprador no contienen precios internos ni en HTML oculto, JSON o scripts.
+- La compra nunca confía en `codigo_cpr`, `precio_kilo_final` ni `precio_total` enviados por el navegador; el detalle `/api/mis-compras/:id` comprueba la pertenencia (IDOR).
+- Las respuestas que recibe un comprador (`/api/catalogo`, `/api/mis-compras`) no incluyen precios por kilo, solo el precio total.
 - Páginas privadas con `Cache-Control: no-store`.
 - Validación de datos con express-validator, consultas parametrizadas con Sequelize y salida escapada en EJS.
 - Imágenes JPG, PNG o WEBP de hasta 2 MB, validando extensión, tipo MIME y firma del archivo; se guardan con un nombre generado.
-- Cabeceras seguras con helmet; los errores no muestran detalles internos al usuario.
+- Cabeceras seguras con helmet en los dos proyectos; los errores no muestran detalles internos.
 
 ## Rutas principales
+
+Pantallas del cliente (http://localhost:3000):
 
 | Ruta | Descripción |
 |---|---|
@@ -354,6 +442,47 @@ index.js       punto de entrada del servidor
 | `/reportes?desde=&hasta=`, `/reportes/pdf?desde=&hasta=` | Reporte por intervalo de fechas y PDF (A/E) |
 
 A = Administrador, E = Empleado, C = Comprador.
+
+## Endpoints de la API
+
+Base: `http://localhost:2900/api`. Todas las respuestas son JSON. Las rutas marcadas con 🔒 necesitan `Authorization: Bearer <token>`. Los errores vienen como `{ "error": "mensaje" }` (y `errores` por campo en las validaciones).
+
+| Método y ruta | Rol | Descripción |
+|---|---|---|
+| `POST /auth/login` | — | `{ nombre_usuario, password }` → `{ token, usuario }` |
+| `POST /auth/registro` | — | Crea una cuenta de comprador sin confirmar y envía el correo |
+| `POST /auth/confirmar/:token`, `POST /auth/confirmar/reenviar` | — | Confirma el correo / reenvía el enlace |
+| `GET /auth/me` 🔒 | todos | Datos de la cuenta del token |
+| `GET /dashboard` 🔒 | A/E | Indicadores del día |
+| `GET /lotes`, `GET /lotes/:id` 🔒 | A/E | Lotes con filtros y paginación / detalle |
+| `POST /lotes`, `PUT /lotes/:id`, `PATCH /lotes/:id/retirar` 🔒 | A | Alta y edición (multipart con imágenes) y retiro |
+| `GET /tipos`, `GET /tipos/:id`, `POST /tipos`, `PUT /tipos/:id` 🔒 | A | Tipos de producto |
+| `GET /ventas`, `GET /ventas/por-publicar`, `POST /ventas/publicar`, `PATCH /ventas/:id/despublicar` 🔒 | A | Gestión de ventas |
+| `GET /catalogo`, `GET /catalogo/:id`, `POST /catalogo/:id/comprar` 🔒 | C | Catálogo y compra |
+| `GET /mis-compras`, `GET /mis-compras/pdf`, `GET /mis-compras/:id` 🔒 | C | Historial y PDF propios |
+| `GET /compras`, `GET /compras/:id` 🔒 | A/E | Historial interno de compras |
+| `GET /compradores`, `POST /compradores`, `GET /compradores/:codigo`, `PUT /compradores/:codigo` 🔒 | A | Compradores |
+| `POST`/`PUT /compradores/:codigo/cuenta`, `PATCH .../cuenta/estado`, `PUT .../cuenta/password` 🔒 | A | Cuenta del comprador |
+| `GET /usuarios`, `POST /usuarios`, `GET`/`PUT /usuarios/:id`, `PATCH /usuarios/:id/estado`, `PUT /usuarios/:id/password` 🔒 | A | Cuentas de empleado |
+| `GET /reportes?desde=&hasta=`, `GET /reportes/pdf?desde=&hasta=`, `GET /reportes/jornadas` 🔒 | A/E | Reportes por fechas y PDF |
+
+Ejemplo con curl:
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:2900/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"nombre_usuario":"admin","password":"tu_clave"}' | node -pe 'JSON.parse(require("fs").readFileSync(0)).token')
+curl -s http://localhost:2900/api/lotes -H "Authorization: Bearer $TOKEN"
+```
+
+## Entrega (archivo comprimido)
+
+Se entregan los dos proyectos en un solo archivo comprimido con el número de equipo, sin `node_modules` (se recupera con `npm install`) y sin los `.env` (tienen contraseñas; van los `.env.example`). Desde la carpeta que contiene `Sistema_Lonja`, cambiando `X` por el número de equipo:
+
+```bash
+cd ..
+zip -r Equipo_X.zip Sistema_Lonja -x "*/node_modules/*" "*/.env" "*/.git/*"
+```
 
 ## Flujo de trabajo con Git
 

@@ -1,0 +1,28 @@
+{
+  "name": "lonja-cliente",
+  "version": "2.0.0",
+  "description": "Lonja Cliente: vistas EJS del Sistema Lonja de Veracruz que consumen la Lonja API con JWT (Programación Web 2)",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "server": "nodemon index.js",
+    "start": "node index.js"
+  },
+  "author": "Victor Federico Caldera Arellano y Alejandra Naomi Muciño Hernández (Programación Web 2)",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/poppins": "^5.3.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^18.0.10",
+    "ejs": "^7.0.2",
+    "express": "^5.3.0",
+    "helmet": "^8.3.0",
+    "lucide-static": "^1.71.0",
+    "multer": "^2.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
