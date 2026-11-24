@@ -153,6 +153,8 @@ textarea.form-control { min-height: 80px; }
 .btn-blanco:hover { background: var(--agua); color: var(--navy); border-color: var(--turquesa); }
 .btn-borde-turquesa { background: #fff; border: 1px solid var(--turquesa); color: var(--turquesa-oscuro); }
 .btn-borde-turquesa:hover { background: var(--agua); color: var(--turquesa-oscuro); }
+.btn-borde-peligro { background: #fff; border: 1px solid var(--peligro); color: var(--peligro); }
+.btn-borde-peligro:hover, .btn-borde-peligro:focus { background: var(--peligro-fondo); color: var(--peligro); border-color: var(--peligro); }
 .btn-icono {
     width: 36px; height: 36px; min-height: 36px; padding: 0; border-radius: var(--radio-campo); border: 1px solid var(--borde);
     background: #fff; color: var(--navy); font-size: 17px; display: inline-flex; align-items: center; justify-content: center;

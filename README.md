@@ -456,7 +456,7 @@ Base: `http://localhost:2900/api`. Todas las respuestas son JSON. Las rutas marc
 | `GET /dashboard` 🔒 | A/E | Indicadores del día |
 | `GET /lotes`, `GET /lotes/:id` 🔒 | A/E | Lotes con filtros y paginación / detalle |
 | `POST /lotes`, `PUT /lotes/:id`, `PATCH /lotes/:id/retirar` 🔒 | A | Alta y edición (multipart con imágenes) y retiro |
-| `GET /tipos`, `GET /tipos/:id`, `POST /tipos`, `PUT /tipos/:id` 🔒 | A | Tipos de producto |
+| `GET /tipos`, `GET /tipos/:id`, `POST /tipos`, `PUT /tipos/:id`, `DELETE /tipos/:id` 🔒 | A | Tipos de producto (CRUD con curl en `lonja-api/scripts/tipo/`) |
 | `GET /ventas`, `GET /ventas/por-publicar`, `POST /ventas/publicar`, `PATCH /ventas/:id/despublicar` 🔒 | A | Gestión de ventas |
 | `GET /catalogo`, `GET /catalogo/:id`, `POST /catalogo/:id/comprar` 🔒 | C | Catálogo y compra |
 | `GET /mis-compras`, `GET /mis-compras/pdf`, `GET /mis-compras/:id` 🔒 | C | Historial y PDF propios |
@@ -474,6 +474,20 @@ TOKEN=$(curl -s -X POST http://localhost:2900/api/auth/login \
   -d '{"nombre_usuario":"admin","password":"tu_clave"}' | node -pe 'JSON.parse(require("fs").readFileSync(0)).token')
 curl -s http://localhost:2900/api/lotes -H "Authorization: Bearer $TOKEN"
 ```
+
+### CRUD de la tabla `tipo` con curl
+
+En `lonja-api/scripts/tipo/` hay scripts que prueban el CRUD completo de la tabla `tipo` contra la API (la API debe estar encendida). Inician sesión con `ADMIN_USER` y `ADMIN_PASSWORD` del `.env`.
+
+| Operación | Método | Script |
+|---|---|---|
+| Insert | `POST /api/tipos` | `./crear.sh "Moluscos"` |
+| Consultar | `GET /api/tipos`, `GET /api/tipos/:id` | `./listar.sh`, `./ver.sh 3` |
+| Modificar | `PUT /api/tipos/:id` | `./modificar.sh 3 "Bivalvos"` |
+| Eliminar | `DELETE /api/tipos/:id` | `./eliminar.sh 3` |
+| Todo seguido, con casos de error | | `./crud_completo.sh` |
+
+Un tipo que usan especies no se puede eliminar (la API responde 409). En `comandos_curl.txt` están los mismos comandos para escribirlos a mano. Desde el cliente, un tipo se elimina con el botón **Eliminar tipo** en la pantalla de edición.
 
 ## Entrega (archivo comprimido)
 

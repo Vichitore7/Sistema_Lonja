@@ -5,6 +5,7 @@ const MENSAJES = {
     'lote-retirado': 'El lote se marcó como retirado.',
     'tipo-creado': 'El tipo se registró correctamente.',
     'tipo-editado': 'El tipo se actualizó.',
+    'tipo-eliminado': 'El tipo se eliminó.',
     'comprador-creado': 'El comprador se registró correctamente.',
     'comprador-editado': 'Los datos del comprador se actualizaron.',
     'lote-publicado': 'El lote se puso a la venta y ya aparece en el catálogo de los compradores.',
@@ -29,6 +30,7 @@ export const mensajeExito = (clave) => MENSAJES[clave] || null;
 
 // Mensajes de error que se muestran después de un redirect (?error=clave)
 const ERRORES = {
+    'tipo-en-uso': 'No se puede eliminar este tipo porque hay especies registradas con él.',
     'lote-no-disponible': 'Solo se pueden editar o retirar lotes con estado Disponible.',
     'usuario-no-editable': 'Solo se pueden administrar cuentas de Empleado.',
     'lote-publicado': 'El lote está a la venta. Retíralo del catálogo en Gestión de ventas antes de editarlo.',

@@ -34,12 +34,22 @@
 
     <div class="pie-formulario">
         <span class="small"><span class="req">*</span> Campos obligatorios</span>
+        <% if (tipo) { %>
+            <button type="submit" form="form-eliminar-tipo" class="btn btn-borde-peligro"><i class="icon-trash-2" aria-hidden="true"></i>Eliminar tipo</button>
+        <% } %>
         <div class="botones">
             <a href="/tipos" class="btn btn-blanco"><i class="icon-x" aria-hidden="true"></i>Cancelar</a>
             <button type="submit" class="btn btn-turquesa"><i class="icon-save" aria-hidden="true"></i>Guardar tipo</button>
         </div>
     </div>
 </form>
+
+<% if (tipo) { %>
+    <form id="form-eliminar-tipo" method="POST" action="/tipos/<%= tipo.id_tpo %>/eliminar"
+          data-confirmar="¿Eliminar el tipo <%= tipo.nombre %>? Esta acción no se puede deshacer.">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    </form>
+<% } %>
 
 <%- include('../partials/finLayout') %>
 <%- include('../partials/footer') %>

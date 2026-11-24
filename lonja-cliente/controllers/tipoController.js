@@ -51,4 +51,16 @@ const editar = async (req, res) => {
     }
 };
 
-export { listar, formularioNuevo, crear, formularioEditar, editar };
+// POST /tipos/:id/eliminar -> DELETE /api/tipos/:id
+const eliminar = async (req, res) => {
+    const id = seg(req.params.id);
+    try {
+        await req.api(`/tipos/${id}`, { method: 'DELETE' });
+        return res.redirect('/tipos?msg=tipo-eliminado');
+    } catch (error) {
+        if (error instanceof ErrorApi && error.status === 409) return res.redirect(`/tipos/${id}/editar?error=tipo-en-uso`);
+        throw error;
+    }
+};
+
+export { listar, formularioNuevo, crear, formularioEditar, editar, eliminar };

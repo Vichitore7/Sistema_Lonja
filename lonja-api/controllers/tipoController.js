@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { db, Tipo } from '../models/index.js';
+import { db, Tipo, Especie } from '../models/index.js';
 import { obtenerErrores } from '../middleware/validar.js';
 import { noExiste } from '../middleware/errores.js';
 import { paginar, entero, texto } from '../helpers/utilidades.js';
@@ -56,4 +56,16 @@ const editar = async (req, res) => {
     res.json(tipo);
 };
 
-export { listar, detalle, crear, editar };
+// DELETE /api/tipos/:id  (no se borra si alguna especie lo usa)
+const eliminar = async (req, res) => {
+    const tipo = entero(req.params.id) && await Tipo.findByPk(entero(req.params.id));
+    if (!tipo) return noExiste(res, 'Tipo no encontrado');
+    const enUso = await Especie.count({ where: { id_tpo: tipo.id_tpo } });
+    if (enUso) {
+        return res.status(409).json({ error: `No se puede eliminar: ${enUso} especie(s) usan el tipo "${tipo.nombre}".` });
+    }
+    await tipo.destroy();
+    res.json({ mensaje: `Tipo "${tipo.nombre}" eliminado`, id_tpo: tipo.id_tpo });
+};
+
+export { listar, detalle, crear, editar, eliminar };

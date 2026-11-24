@@ -1,0 +1,41 @@
+CRUD DE LA TABLA "tipo" SOLO CON CURL (versión corta)
+=====================================================
+
+Antes: la API debe estar prendida (npm start en lonja-api).
+Cambia administrador / TU_CONTRASEÑA por ADMIN_USER / ADMIN_PASSWORD de lonja-api/.env.
+Cambia el 12 por el id que te dé el INSERT.
+
+--json  -> manda los datos en JSON (agrega el Content-Type)
+-X      -> el método HTTP: POST (insert), GET (consultar), PUT (modificar), DELETE (eliminar)
+-H "$A" -> el token (permiso de administrador)
+
+
+PREPARACIÓN (una sola vez)
+--------------------------
+
+U=localhost:2900/api
+
+TOKEN=$(curl -s --json '{"nombre_usuario":"administrador","password":"TU_CONTRASEÑA"}' $U/auth/login | cut -d'"' -f4)
+
+A="Authorization: Bearer $TOKEN"
+
+
+INSERT
+------
+curl -X POST --json '{"nombre":"Moluscos"}' -H "$A" $U/tipos
+
+
+CONSULTAR
+---------
+curl -X GET -H "$A" $U/tipos
+curl -X GET -H "$A" $U/tipos/12
+
+
+MODIFICACIÓN
+------------
+curl -X PUT --json '{"nombre":"Bivalvos"}' -H "$A" $U/tipos/12
+
+
+DELETE
+------
+curl -X DELETE -H "$A" $U/tipos/12
